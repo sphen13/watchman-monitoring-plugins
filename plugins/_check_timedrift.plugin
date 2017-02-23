@@ -4,16 +4,21 @@
 # AUTHOR: Stephen Boyle @sphen13
 # DATE:   2017-02-23
 
+# defaults
+ntpServer="time.apple.com"
+secondsOfAcceptableDrift=120
+
 # read prefpane settings & set defaults
-settings_plist = '/Library/MonitoringClient/PluginSupport/_check_timedrift.plist'
+settings_plist='/Library/MonitoringClient/PluginSupport/_check_timedrift.plist'
+
+if [ ! -f $settings_plist ]; then
+	defaults write /Library/MonitoringClient/PluginSupport/_check_timedrift.plist ntpServer -string "$ntpServer"
+	defaults write /Library/MonitoringClient/PluginSupport/_check_timedrift.plist secondsOfAcceptableDrift $secondsOfAcceptableDrift
+	defaults write /Library/MonitoringClient/PluginSupport/_check_timedrift.plist PrefPaneVisibility -bool true
+fi	
+
 ntpServer=`defaults read /Library/MonitoringClient/PluginSupport/_check_timedrift.plist ntpServer`
 secondsOfAcceptableDrift=`defaults read /Library/MonitoringClient/PluginSupport/_check_timedrift.plist secondsOfAcceptableDrift`
-if [ -z "$ntpServer" ]; then
-	ntpServer="time.apple.com"
-fi
-if [ -z "$secondsOfAcceptableDrift" ]; then
-	secondsOfAcceptableDrift=120
-fi
 
 if [ -f /usr/bin/ntpq ]; then
 	# check for drift
@@ -29,11 +34,7 @@ if [ -f /usr/bin/ntpq ]; then
 	else
 		drift=`echo "$output" | sed -n -e 's/^.*offset \(.*\) .*$/\1/p'`
 		driftAcceptable=`echo "$secondsOfAcceptableDrift > $drift" | bc -l`
-	
-		# debug
-		echo "$drift"
-		echo "$driftAcceptable"
-	
+		
 		if [ "$driftAcceptable" == "0" ]; then
 			echo -e "NTP time drift greater than $secondsOfAcceptableDrift seconds.  The clock is off by $drift seconds.\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
 			exit 2
