@@ -41,7 +41,7 @@ if [ -f /usr/bin/ntpq ]; then
 			echo -e "NTP time drift OK: $drift seconds.\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
 			exit 0
 		else
-			echo -e "Oops - this shouldnt happen...  [$drift]\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
+			echo -e "Oops - this should not happen...  [$drift]\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
 			exit 2
 		fi
 	fi
