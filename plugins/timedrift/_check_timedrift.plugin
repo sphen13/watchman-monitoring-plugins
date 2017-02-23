@@ -4,8 +4,16 @@
 # AUTHOR: Stephen Boyle @sphen13
 # DATE:   2017-02-23
 
-ntpServer="time.apple.com"
-secondsOfAcceptableDrift=120
+# read prefpane settings & set defaults
+settings_plist = '/Library/MonitoringClient/PluginSupport/_check_timedrift.plist'
+ntpServer=`defaults read /Library/MonitoringClient/PluginSupport/_check_timedrift.plist ntpServer`
+secondsOfAcceptableDrift=`defaults read /Library/MonitoringClient/PluginSupport/_check_timedrift.plist secondsOfAcceptableDrift`
+if [ -z "$ntpServer" ]; then
+	ntpServer="time.apple.com"
+fi
+if [ -z "$secondsOfAcceptableDrift" ]; then
+	secondsOfAcceptableDrift=120
+fi
 
 if [ -f /usr/bin/ntpq ]; then
 	# check for drift

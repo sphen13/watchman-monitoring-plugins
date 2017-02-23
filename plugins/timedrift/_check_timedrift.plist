@@ -5,7 +5,61 @@
 	<key>PluginName</key>
 	<string>Time Drift</string>
 	<key>PluginVersion</key>
-	<string>0.1</string>
+	<string>0.2</string>
+	<key>PluginOptions</key>
+	<array>
+		<dict>
+			<key>SettingStorageKey</key>
+			<string>.</string>
+			<key>SettingStoragePath</key>
+			<string>/Library/MonitoringClient/PluginSupport/_check_timedrift.plist</string>
+			<key>SettingTitle</key>
+			<string>This plugin reports current NTP time drift</string>
+			<key>SettingTitleHint</key>
+			<string></string>
+			<key>SettingType</key>
+			<dict>
+				<key>Type</key>
+				<string>DisplayOnly</string>
+				<key>Value</key>
+				<string></string>
+			</dict>
+		</dict>
+		<dict>
+			<key>SettingStorageKey</key>
+			<string>ntpServer</string>
+			<key>SettingStoragePath</key>
+			<string>/Library/MonitoringClient/PluginSupport/_check_timedrift.plist</string>
+			<key>SettingTitle</key>
+			<string>NTP reference server</string>
+			<key>SettingTitleHint</key>
+			<string></string>
+			<key>SettingType</key>
+			<dict>
+				<key>Type</key>
+				<string>TextField</string>
+				<key>Value</key>
+				<string></string>
+			</dict>
+		</dict>
+		<dict>
+			<key>SettingStorageKey</key>
+			<string>secondsOfAcceptableDrift</string>
+			<key>SettingStoragePath</key>
+			<string>/Library/MonitoringClient/PluginSupport/_check_timedrift.plist</string>
+			<key>SettingTitle</key>
+			<string>Generate a warning when time drift is greater than X seconds</string>
+			<key>SettingTitleHint</key>
+			<string></string>
+			<key>SettingType</key>
+			<dict>
+				<key>Type</key>
+				<string>NumberPicker</string>
+				<key>Value</key>
+				<string>0-300</string>
+			</dict>
+		</dict>
+	</array>
 	<key>ProgramArguments</key>
 	<array>
 		<string>_check_timedrift.plugin</string>
