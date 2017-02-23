@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# PLUGIN: TimeDrift
+# AUTHOR: Stephen Boyle @sphen13
+# DATE:   2017-02-23
+
+ntpServer="time.apple.com"
+secondsOfAcceptableDrift=120
+
+if [ -f /usr/bin/ntpq ]; then
+	# check for drift
+	output=`ntpdate -q "$ntpServer" 2>&1 | tail -1`
+		
+	# check if ntp server unreachable
+	if [[ $output == *"suitable"* ]]; then
+		echo -e "NTP server unreachable.  Please check NTP server specified or check DNS/firewall.\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
+		exit 2
+	elif [[ $output == *"no servers"* ]]; then
+		echo -e "NTP server does not exist.  Please check NTP server specified or check DNS.\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
+		exit 2
+	else
+		drift=`echo "$output" | sed -n -e 's/^.*offset \(.*\) .*$/\1/p'`
+		driftAcceptable=`echo "$secondsOfAcceptableDrift > $drift" | bc -l`
+	
+		# debug
+		echo "$drift"
+		echo "$driftAcceptable"
+	
+		if [ "$driftAcceptable" == "0" ]; then
+			echo -e "NTP time drift greater than $secondsOfAcceptableDrift seconds.  The clock is off by $drift seconds.\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
+			exit 2
+		elif [ "$driftAcceptable" == "1" ]; then
+			echo -e "NTP time drift OK: $drift seconds.\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
+			exit 0
+		else
+			echo -e "Oops - this shouldnt happen...  [$drift]\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
+			exit 2
+		fi
+	fi
+fi
+
+echo "ntpq binary not found"
+exit 2
