@@ -44,7 +44,7 @@ if [ -f /usr/bin/ntpq ]; then
 		echo -e "NTP server does not exist.  Please check NTP server specified or check DNS.\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
 		exit 2
 	else
-		drift=`echo "$output" | sed -n -e 's/^.*offset \(.*\) .*$/\1/p'`
+		drift=`echo "$output" | sed -n -e 's/^.*offset [-]*\(.*\) .*$/\1/p'`
 		driftAcceptable=`echo "$secondsOfAcceptableDrift > $drift" | bc -l`
 		
 		if [ "$driftAcceptable" == "0" ]; then
