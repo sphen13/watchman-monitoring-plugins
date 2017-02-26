@@ -12,7 +12,7 @@
 			<key>SettingStorageKey</key>
 			<string>.</string>
 			<key>SettingStoragePath</key>
-			<string>/Library/MonitoringClient/PluginSupport/_external_ip.plist</string>
+			<string>/Library/MonitoringClient/PluginSupport/_check_external_ip.plist</string>
 			<key>SettingTitle</key>
 			<string>This plugin reports if the external IP changes</string>
 			<key>SettingTitleHint</key>
@@ -28,7 +28,7 @@
 	</array>
 	<key>ProgramArguments</key>
 	<array>
-		<string>_external_ip.plugin</string>
+		<string>_check_external_ip.plugin</string>
 	</array>
 </dict>
 </plist>

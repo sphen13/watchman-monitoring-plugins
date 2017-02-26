@@ -5,7 +5,7 @@
 # DATE:   2017-02-26
 
 # read prefpane settings & set defaults
-settings_plist='/Library/MonitoringClient/PluginSupport/_external_ip.plist'
+settings_plist='/Library/MonitoringClient/PluginSupport/_check_external_ip.plist'
 
 if [ ! -f $settings_plist ]; then
 	# populate plist with defaults
