@@ -9,7 +9,7 @@ ntpServer="time.apple.com"
 secondsOfAcceptableDrift=120
 
 # read prefpane settings & set defaults
-settings_plist='/Library/MonitoringClient/PluginSupport/_check_timedrift.plist'
+settings_plist='/Library/MonitoringClient/PluginSupport/_check_timedrift_settings.plist'
 
 if [ ! -f $settings_plist ]; then
 	# populate plist with defaults

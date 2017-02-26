@@ -12,7 +12,7 @@
 			<key>SettingStorageKey</key>
 			<string>.</string>
 			<key>SettingStoragePath</key>
-			<string>/Library/MonitoringClient/PluginSupport/_check_timedrift.plist</string>
+			<string>/Library/MonitoringClient/PluginSupport/_check_timedrift_settings.plist</string>
 			<key>SettingTitle</key>
 			<string>This plugin reports current NTP time drift</string>
 			<key>SettingTitleHint</key>
@@ -29,7 +29,7 @@
 			<key>SettingStorageKey</key>
 			<string>ntpServer</string>
 			<key>SettingStoragePath</key>
-			<string>/Library/MonitoringClient/PluginSupport/_check_timedrift.plist</string>
+			<string>/Library/MonitoringClient/PluginSupport/_check_timedrift_settings.plist</string>
 			<key>SettingTitle</key>
 			<string>NTP reference server</string>
 			<key>SettingTitleHint</key>
@@ -46,7 +46,7 @@
 			<key>SettingStorageKey</key>
 			<string>secondsOfAcceptableDrift</string>
 			<key>SettingStoragePath</key>
-			<string>/Library/MonitoringClient/PluginSupport/_check_timedrift.plist</string>
+			<string>/Library/MonitoringClient/PluginSupport/_check_timedrift_settings.plist</string>
 			<key>SettingTitle</key>
 			<string>Generate a warning when time drift is greater than X seconds</string>
 			<key>SettingTitleHint</key>
