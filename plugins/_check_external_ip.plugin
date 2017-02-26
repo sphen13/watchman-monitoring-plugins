@@ -10,6 +10,7 @@ settings_plist='/Library/MonitoringClient/PluginSupport/_check_external_ip.plist
 if [ ! -f $settings_plist ]; then
 	# populate plist with defaults
 	defaults write "$settings_plist" PrefPaneVisibility -bool true
+	defaults write "$settings_plist" Initially_Disabled -bool true
 fi
 
 lastIP=`defaults read "$settings_plist" lastIP 2>/dev/null`
