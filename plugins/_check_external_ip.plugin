@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# PLUGIN: Check External IP
+# AUTHOR: Stephen Boyle @sphen13
+# DATE:   2017-02-26
+
+# read prefpane settings & set defaults
+settings_plist='/Library/MonitoringClient/PluginSupport/_external_ip.plist'
+
+if [ ! -f $settings_plist ]; then
+	# populate plist with defaults
+	defaults write "$settings_plist" PrefPaneVisibility -bool true
+fi
+
+lastIP=`defaults read "$settings_plist" lastIP 2>/dev/null`
+currentIP=`curl -s -4 icanhazip.com`
+
+if [ -z "$lastIP" ]; then
+	# plugin first run - set lastIP in prefs
+	defaults write "$settings_plist" lastIP "$currentIP"
+	lastIP=$currentIP
+fi
+
+if [ "$lastIP" != "$currentIP" ]; then
+	defaults write "$settings_plist" lastIP "$currentIP"
+	echo "External IP changed from $lastIP to $currentIP"
+	exit 2
+fi
+
+echo "Current external IP: $lastIP"
+exit 0
