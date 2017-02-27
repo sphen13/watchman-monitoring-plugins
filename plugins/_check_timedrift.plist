@@ -5,7 +5,7 @@
 	<key>PluginName</key>
 	<string>Time Drift</string>
 	<key>PluginVersion</key>
-	<string>0.3</string>
+	<string>0.4</string>
 	<key>PluginOptions</key>
 	<array>
 		<dict>
@@ -14,7 +14,7 @@
 			<key>SettingStoragePath</key>
 			<string>/Library/MonitoringClient/PluginSupport/_check_timedrift_settings.plist</string>
 			<key>SettingTitle</key>
-			<string>This plugin reports current NTP time drift</string>
+			<string>Report and alert on current NTP time drift</string>
 			<key>SettingTitleHint</key>
 			<string></string>
 			<key>SettingType</key>
@@ -48,7 +48,7 @@
 			<key>SettingStoragePath</key>
 			<string>/Library/MonitoringClient/PluginSupport/_check_timedrift_settings.plist</string>
 			<key>SettingTitle</key>
-			<string>Generate a warning when time drift is greater than X seconds</string>
+			<string>Generate an alert when time drift is greater than X seconds</string>
 			<key>SettingTitleHint</key>
 			<string></string>
 			<key>SettingType</key>

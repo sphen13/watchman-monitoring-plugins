@@ -4,27 +4,44 @@
 # AUTHOR: Stephen Boyle @sphen13
 # DATE:   2017-02-23
 
-# defaults
+# idea: try to fix it!
+# launchctl unload /System/Library/LaunchDaemons/org.ntp.ntpd.plist 
+# launchctl load /System/Library/LaunchDaemons/org.ntp.ntpd.plist
+
+# set defaults
+pluginName="_check_timedrift"
 ntpServer="time.apple.com"
 secondsOfAcceptableDrift=120
 
-# read prefpane settings & set defaults
-settings_plist='/Library/MonitoringClient/PluginSupport/_check_timedrift_settings.plist'
+settings_plist="/Library/MonitoringClient/PluginSupport/"$pluginName"_settings.plist"
+clientSettings="/Library/MonitoringClient/ClientSettings.plist"
+PlistBuddy="/usr/libexec/PlistBuddy"
 
+# read settings and create if needed. disable by default
 if [ ! -f $settings_plist ]; then
 	# populate plist with defaults
 	defaults write "$settings_plist" ntpServer -string "$ntpServer"
 	defaults write "$settings_plist" secondsOfAcceptableDrift $secondsOfAcceptableDrift
 	defaults write "$settings_plist" PrefPaneVisibility -bool true
+	defaults write "$settings_plist" Initially_Disabled -bool true
+	chmod 644 "$settings_plist"
+	
+	isDisabled=`"$PlistBuddy" -c "Print :PluginsDisabled" "$clientSettings" | grep "$pluginName"`
+	if [ -z "$isDisabled" ]; then
+		"$PlistBuddy" -c "Add :PluginsDisabled: string $pluginName.plugin" "$clientSettings"
+	fi
+	exit 25
 else
 	# plist exists - lets check for each value
 	isset=`defaults read "$settings_plist" ntpServer 2>/dev/null`
 	if [ -z "$isset" ]; then
 		defaults write "$settings_plist" ntpServer -string "$ntpServer"
+		chmod 644 "$settings_plist"
 	fi
 	isset=`defaults read "$settings_plist" secondsOfAcceptableDrift 2>/dev/null`
 	if [ -z "$isset" ]; then
-		defaults write "$settings_plist" secondsOfAcceptableDrift $secondsOfAcceptableDrift
+		defaults write "$settings_plist" secondsOfAcceptableDrift $secondsOfAcceptableDrift		
+		chmod 644 "$settings_plist"
 	fi
 fi
 
