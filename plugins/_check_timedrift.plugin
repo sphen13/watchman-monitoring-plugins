@@ -17,7 +17,7 @@ settings_plist="/Library/MonitoringClient/PluginSupport/"$pluginName"_settings.p
 clientSettings="/Library/MonitoringClient/ClientSettings.plist"
 PlistBuddy="/usr/libexec/PlistBuddy"
 
-# read settings and create if needed. disable by default
+# read settings and create if needed. disable by default / unless we are a server...
 if [ ! -f $settings_plist ]; then
 	# populate plist with defaults
 	defaults write "$settings_plist" ntpServer -string "$ntpServer"
@@ -26,9 +26,16 @@ if [ ! -f $settings_plist ]; then
 	defaults write "$settings_plist" Initially_Disabled -bool true
 	chmod 644 "$settings_plist"
 	
-	isDisabled=`"$PlistBuddy" -c "Print :PluginsDisabled" "$clientSettings" | grep "$pluginName"`
-	if [ -z "$isDisabled" ]; then
-		"$PlistBuddy" -c "Add :PluginsDisabled: string $pluginName.plugin" "$clientSettings"
+	#server check
+	serverCheck=`ps -ax | grep -e "com.apple.serverd" -e "servermgrd" -e "fmserver" -e "4D.app" -e "LightSpeed Server" -e "MPServerDaemon" | grep -v grep`
+	if [ ! -z "$serverCheck" ]; then
+		defaults write "$settings_plist" Initially_Disabled -bool false
+		chmod 644 "$settings_plist"
+	else
+		isDisabled=`"$PlistBuddy" -c "Print :PluginsDisabled" "$clientSettings" | grep "$pluginName"`
+		if [ -z "$isDisabled" ]; then
+			"$PlistBuddy" -c "Add :PluginsDisabled: string $pluginName.plugin" "$clientSettings"
+		fi	
 	fi
 	exit 25
 else
