@@ -5,16 +5,16 @@
 	<key>PluginName</key>
 	<string>Swap Usage</string>
 	<key>PluginVersion</key>
-	<string>0.1</string>
+	<string>0.2</string>
 	<key>PluginOptions</key>
 	<array>
 		<dict>
 			<key>SettingStorageKey</key>
 			<string>.</string>
 			<key>SettingStoragePath</key>
-			<string>/Library/MonitoringClient/PluginSupport/_check_swap.plist</string>
+			<string>/Library/MonitoringClient/PluginSupport/_check_swap_settings.plist</string>
 			<key>SettingTitle</key>
-			<string>This plugin reports current swap memory usage</string>
+			<string>Reports and alerts on current swap memory usage</string>
 			<key>SettingTitleHint</key>
 			<string></string>
 			<key>SettingType</key>
@@ -29,7 +29,7 @@
 			<key>SettingStorageKey</key>
 			<string>warningThreshold</string>
 			<key>SettingStoragePath</key>
-			<string>/Library/MonitoringClient/PluginSupport/_check_swap.plist</string>
+			<string>/Library/MonitoringClient/PluginSupport/_check_swap_settings.plist</string>
 			<key>SettingTitle</key>
 			<string>Warning threshold (% of installed RAM)</string>
 			<key>SettingTitleHint</key>
@@ -46,7 +46,7 @@
 			<key>SettingStorageKey</key>
 			<string>alertThreshold</string>
 			<key>SettingStoragePath</key>
-			<string>/Library/MonitoringClient/PluginSupport/_check_swap.plist</string>
+			<string>/Library/MonitoringClient/PluginSupport/_check_swap_settings.plist</string>
 			<key>SettingTitle</key>
 			<string>Alert threshold (% of installed RAM)</string>
 			<key>SettingTitleHint</key>
