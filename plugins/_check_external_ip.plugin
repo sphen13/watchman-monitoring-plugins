@@ -5,12 +5,22 @@
 # DATE:   2017-02-26
 
 # read prefpane settings & set defaults
-settings_plist='/Library/MonitoringClient/PluginSupport/_check_external_ip.plist'
+pluginName="_check_external_ip"
+settings_plist="/Library/MonitoringClient/PluginSupport/"$pluginName"_settings.plist"
+clientSettings="/Library/MonitoringClient/ClientSettings.plist"
+PlistBuddy="/usr/libexec/PlistBuddy"
 
 if [ ! -f $settings_plist ]; then
-	# populate plist with defaults
+	# populate plist with defaults and disable
 	defaults write "$settings_plist" PrefPaneVisibility -bool true
 	defaults write "$settings_plist" Initially_Disabled -bool true
+	chmod 644 "$settings_plist"
+	
+	isDisabled=`"$PlistBuddy" -c "Print :PluginsDisabled" "$clientSettings" | grep "$pluginName"`
+	if [ -z "$isDisabled" ]; then
+		"$PlistBuddy" -c "Add :PluginsDisabled: string $pluginName.plugin" "$clientSettings"
+	fi
+	exit 25
 fi
 
 lastIP=`defaults read "$settings_plist" lastIP 2>/dev/null`
@@ -19,11 +29,13 @@ currentIP=`curl -s -4 icanhazip.com`
 if [ -z "$lastIP" ]; then
 	# plugin first run - set lastIP in prefs
 	defaults write "$settings_plist" lastIP "$currentIP"
+	chmod 644 "$settings_plist"
 	lastIP=$currentIP
 fi
 
 if [ "$lastIP" != "$currentIP" ]; then
 	defaults write "$settings_plist" lastIP "$currentIP"
+	chmod 644 "$settings_plist"
 	echo "External IP changed from $lastIP to $currentIP"
 	exit 2
 fi

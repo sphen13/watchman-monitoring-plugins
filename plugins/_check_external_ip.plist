@@ -3,18 +3,18 @@
 <plist version="1.0">
 <dict>
 	<key>PluginName</key>
-	<string>Check External IP</string>
+	<string>External IP</string>
 	<key>PluginVersion</key>
-	<string>0.1</string>
+	<string>1.0</string>
 	<key>PluginOptions</key>
 	<array>
 		<dict>
 			<key>SettingStorageKey</key>
 			<string>.</string>
 			<key>SettingStoragePath</key>
-			<string>/Library/MonitoringClient/PluginSupport/_check_external_ip.plist</string>
+			<string>/Library/MonitoringClient/PluginSupport/_check_external_ip_settings.plist</string>
 			<key>SettingTitle</key>
-			<string>This plugin reports if the external IP changes</string>
+			<string>Reports if the external IP changes</string>
 			<key>SettingTitleHint</key>
 			<string></string>
 			<key>SettingType</key>
