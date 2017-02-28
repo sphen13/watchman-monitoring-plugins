@@ -12,26 +12,35 @@ lastBoot=`sysctl kern.boottime | cut -d"}" -f2 | awk '{print $1,$2,$3,$4}'`
 
 if [ ! -f $settings_plist ]; then
 	# populate plist with defaults
-	defaults write "$settings_plist" lastBootChecked -date "$lastBoot +0000"
+	defaults write "$settings_plist" firstRun -bool true
 	defaults write "$settings_plist" PrefPaneVisibility -bool true
 	chmod 644 "$settings_plist"
+	exit 25
 else
-	# plist exists - lets check for each value
-	isset=`defaults read "$settings_plist" lastBootChecked 2>/dev/null`
+	# plist exists... do some checks
+	isset=`defaults read "$settings_plist" firstRun 2>/dev/null`
 	if [ -z "$isset" ]; then
-		defaults write "$settings_plist" lastBootChecked -date "$lastBoot +0000"
+		defaults write "$settings_plist" firstRun -bool true
 		chmod 644 "$settings_plist"
+		exit 25
 	fi
 fi
 
 lastBoot=`date -j -f " %a %b %d %T %Y" "$lastBoot" "+%Y-%m-%d %H:%M:%S"`
-lastBootChecked=`defaults read "$settings_plist" lastBootChecked | awk '{print $1,$2}'`
+isset=`defaults read "$settings_plist" lastBootChecked 2>/dev/null`
+if [ -z "$isset" ]; then
+	lastBootChecked=`date -j -v -1S -f "%Y-%m-%d %H:%M:%S" "$lastBoot" "+%Y-%m-%d %H:%M:%S"`
+else
+	lastBootChecked=`defaults read "$settings_plist" lastBootChecked | awk '{print $1,$2}'`
+fi
+
 firstLine=0
 badReboot=0
 
 # actually do the check now...
 if [ "$lastBoot" != "$lastBootChecked" ]; then
 	if [ "$currentOS" -ge "12" ]; then
+		lastBootCheckEnd=`date -j -v +1H -f "%Y-%m-%d %H:%M:%S" "$lastBoot" "+%Y-%m-%d %H:%M:%S"`
 		while read -r line ; do
 			restartReason=`echo "$line" | awk -F')' '{print $NF}' | awk '{print $4}'`
 			restartTime=`echo "$line" | awk '{print $1,$2}' | cut -d"." -f1`
@@ -43,7 +52,7 @@ if [ "$lastBoot" != "$lastBootChecked" ]; then
 				echo -e "[ $restartTime ] Shutdown cause $restartReason"
 				badReboot=1
 			fi
-		done < <(log show --style syslog --start "$lastBootChecked" | egrep shutdown\ cause)
+		done < <(log show --style syslog --predicate 'senderImagePath contains[cd] "AppleSMC"' --start "$lastBootChecked" --end "$lastBootCheckEnd" | egrep shutdown\ cause)
 		
 		# reset the plist with last boot time
 		defaults write "$settings_plist" lastBootChecked -date "$lastBoot +0000"
