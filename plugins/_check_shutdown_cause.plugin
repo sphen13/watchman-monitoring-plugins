@@ -1,0 +1,64 @@
+#!/bin/bash
+
+# PLUGIN: Check Shutdown Cause
+# AUTHOR: Stephen Boyle @sphen13
+# DATE:   2017-02-26
+
+# read prefpane settings & set defaults
+settings_plist='/Library/MonitoringClient/PluginSupport/_check_shutdown_cause_settings.plist'
+
+currentOS=`sw_vers -productVersion | cut -d'.' -f2`
+lastBoot=`sysctl kern.boottime | cut -d"}" -f2 | awk '{print $1,$2,$3,$4}'`
+
+if [ ! -f $settings_plist ]; then
+	# populate plist with defaults
+	defaults write "$settings_plist" lastBootChecked -date "$lastBoot +0000"
+	defaults write "$settings_plist" PrefPaneVisibility -bool true
+	chmod 644 "$settings_plist"
+else
+	# plist exists - lets check for each value
+	isset=`defaults read "$settings_plist" lastBootChecked 2>/dev/null`
+	if [ -z "$isset" ]; then
+		defaults write "$settings_plist" lastBootChecked -date "$lastBoot +0000"
+		chmod 644 "$settings_plist"
+	fi
+fi
+
+lastBoot=`date -j -f " %a %b %d %T %Y" "$lastBoot" "+%Y-%m-%d %H:%M:%S"`
+lastBootChecked=`defaults read "$settings_plist" lastBootChecked | awk '{print $1,$2}'`
+firstLine=0
+badReboot=0
+
+# actually do the check now...
+if [ "$lastBoot" != "$lastBootChecked" ]; then
+	if [ "$currentOS" -ge "12" ]; then
+		while read -r line ; do
+			restartReason=`echo "$line" | awk -F')' '{print $NF}' | awk '{print $4}'`
+			restartTime=`echo "$line" | awk '{print $1,$2}' | cut -d"." -f1`
+			if [ "$restartReason" -ne "5" ]; then
+				if [ "$firstLine" -eq "0" ]; then
+					echo -e "Abnormal restart detected:\n"
+					firstLine=1
+				fi
+				echo -e "[ $restartTime ] Shutdown cause $restartReason"
+				badReboot=1
+			fi
+		done < <(log show --style syslog --start "$lastBootChecked" | egrep shutdown\ cause)
+		
+		# reset the plist with last boot time
+		defaults write "$settings_plist" lastBootChecked -date "$lastBoot +0000"
+		chmod 644 "$settings_plist"
+				
+		if [ "$badReboot" -ne "0" ]; then
+			exit 2
+		fi
+		
+		echo "Last Reboot [$lastBoot ] OK"
+		exit 0
+	else
+		echo "Oops - you have 10.11 or earlier... I havent gotten this far yet..."
+		exit 20
+	fi
+fi
+
+exit 25
