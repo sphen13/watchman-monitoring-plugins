@@ -4,6 +4,8 @@
 # AUTHOR: Stephen Boyle @sphen13
 # DATE:   2017-02-26
 
+# always report OK if we just reported a badreboot but the last one was ok...??
+
 # read prefpane settings & set defaults
 settings_plist='/Library/MonitoringClient/PluginSupport/_check_shutdown_cause_settings.plist'
 
@@ -11,13 +13,13 @@ currentOS=`sw_vers -productVersion | cut -d'.' -f2`
 lastBoot=`sysctl kern.boottime | cut -d"}" -f2 | awk '{print $1,$2,$3,$4}'`
 
 if [ ! -f $settings_plist ]; then
-	# populate plist with defaults
+	# populate plist with defaults - set firstRun and exit silently
 	defaults write "$settings_plist" firstRun -bool true
 	defaults write "$settings_plist" PrefPaneVisibility -bool true
 	chmod 644 "$settings_plist"
 	exit 25
 else
-	# plist exists... do some checks
+	# plist exists... check to see if firstRun - if not - set and exit silently - otherwise continue
 	isset=`defaults read "$settings_plist" firstRun 2>/dev/null`
 	if [ -z "$isset" ]; then
 		defaults write "$settings_plist" firstRun -bool true
@@ -27,9 +29,13 @@ else
 fi
 
 lastBoot=`date -j -f " %a %b %d %T %Y" "$lastBoot" "+%Y-%m-%d %H:%M:%S"`
+
+# get the last boot that we actually checked the result of... if we have not checked successfully before set the dontSkipFirst variable
+dontSkipFirst=0
 isset=`defaults read "$settings_plist" lastBootChecked 2>/dev/null`
 if [ -z "$isset" ]; then
 	lastBootChecked=`date -j -v -1S -f "%Y-%m-%d %H:%M:%S" "$lastBoot" "+%Y-%m-%d %H:%M:%S"`
+	dontSkipFirst=1
 else
 	lastBootChecked=`defaults read "$settings_plist" lastBootChecked | awk '{print $1,$2}'`
 fi
@@ -40,28 +46,41 @@ badReboot=0
 # actually do the check now...
 if [ "$lastBoot" != "$lastBootChecked" ]; then
 	if [ "$currentOS" -ge "12" ]; then
-		lastBootCheckEnd=`date -j -v +1H -f "%Y-%m-%d %H:%M:%S" "$lastBoot" "+%Y-%m-%d %H:%M:%S"`
+		# set the end date of our log scan to + 10 minutes
+		lastBootCheckEnd=`date -j -v +10M -f "%Y-%m-%d %H:%M:%S" "$lastBoot" "+%Y-%m-%d %H:%M:%S"`
+		firstReboot=0
+		
+		# loop over log entries between the last successful check and lastBootCheckEnd
 		while read -r line ; do
 			restartReason=`echo "$line" | awk -F')' '{print $NF}' | awk '{print $4}'`
 			restartTime=`echo "$line" | awk '{print $1,$2}' | cut -d"." -f1`
-			if [ "$restartReason" -ne "5" ]; then
-				if [ "$firstLine" -eq "0" ]; then
-					echo -e "Abnormal restart detected:\n"
-					firstLine=1
+			
+			# skip the first result found - as that was last time / unless we say not too... (first run?)
+			if [[ "$firstReboot" -eq "0" && "$dontSkipFirst" -eq "0" ]]; then
+				firstReboot=1
+			else
+				# log any result other than 5 - set badReboot variable
+				if [ "$restartReason" -ne "5" ]; then
+					if [ "$firstLine" -eq "0" ]; then
+						echo -e "Abnormal restart detected:\n"
+						firstLine=1
+					fi
+					echo -e "[ $restartTime ] Shutdown cause $restartReason"
+					badReboot=1
 				fi
-				echo -e "[ $restartTime ] Shutdown cause $restartReason"
-				badReboot=1
 			fi
 		done < <(log show --style syslog --predicate 'senderImagePath contains[cd] "AppleSMC"' --start "$lastBootChecked" --end "$lastBootCheckEnd" | egrep shutdown\ cause)
 		
 		# reset the plist with last boot time
 		defaults write "$settings_plist" lastBootChecked -date "$lastBoot +0000"
 		chmod 644 "$settings_plist"
-				
+		
+		# check if we identified a bad reboot - if so exit with error.
 		if [ "$badReboot" -ne "0" ]; then
 			exit 2
 		fi
 		
+		# all good if we got this far - report ok.
 		echo "Last Reboot [$lastBoot ] OK"
 		exit 0
 	else
