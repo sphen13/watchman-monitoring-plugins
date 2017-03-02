@@ -29,64 +29,81 @@ else
 fi
 
 lastBoot=`date -j -f " %a %b %d %T %Y" "$lastBoot" "+%Y-%m-%d %H:%M:%S"`
+thisCheck=`date "+%Y-%m-%d %H:%M:%S"`
 
-# get the last boot that we actually checked the result of... if we have not checked successfully before set the dontSkipFirst variable
-dontSkipFirst=0
-isset=`defaults read "$settings_plist" lastBootChecked 2>/dev/null`
+# get the last time we did a check - if we have not - set it to the last boot time
+isset=`defaults read "$settings_plist" lastCheck 2>/dev/null`
 if [ -z "$isset" ]; then
-	lastBootChecked=`date -j -v -1S -f "%Y-%m-%d %H:%M:%S" "$lastBoot" "+%Y-%m-%d %H:%M:%S"`
-	dontSkipFirst=1
+	lastCheck=`date -j -v -1S -f "%Y-%m-%d %H:%M:%S" "$lastBoot" "+%Y-%m-%d %H:%M:%S"`
 else
-	lastBootChecked=`defaults read "$settings_plist" lastBootChecked | awk '{print $1,$2}'`
+	lastCheck=`defaults read "$settings_plist" lastCheck | awk '{print $1,$2}'`
 fi
+
+# get if we need to do a recheck/resubmit... if so set the last check time to last boot time again...
+isset=`defaults read "$settings_plist" resendLastBoot 2>/dev/null`
+if [ ! -z "$isset" ]; then
+	if [ "$isset" -eq "1" ]; then
+		lastCheck=`date -j -v -1S -f "%Y-%m-%d %H:%M:%S" "$lastBoot" "+%Y-%m-%d %H:%M:%S"`
+	fi
+fi
+# lets assume to not recheck next run
+defaults write "$settings_plist" resendLastBoot -bool false
+chmod 644 "$settings_plist"
+
 
 firstLine=0
 badReboot=0
+lastBootSec=`date -j -f "%Y-%m-%d %H:%M:%S" "$lastBoot" "+%s"`
+lastCheckSec=`date -j -f "%Y-%m-%d %H:%M:%S" "$lastCheck" "+%s"`
 
-# actually do the check now...
-if [ "$lastBoot" != "$lastBootChecked" ]; then
+if [ "$lastCheckSec" -lt "$lastBootSec" ]; then
+	# we have had a reboot since last time we checked
+	
+	# increment the last check time to now
+	defaults write "$settings_plist" lastCheck -date "$thisCheck +0000"
+	chmod 644 "$settings_plist"
+
 	if [ "$currentOS" -ge "12" ]; then
-		# set the end date of our log scan to + 10 minutes
-		lastBootCheckEnd=`date -j -v +10M -f "%Y-%m-%d %H:%M:%S" "$lastBoot" "+%Y-%m-%d %H:%M:%S"`
-		firstReboot=0
+		# set the end date of our log scan to + 5 minutes
+		lastBootCheckEnd=`date -j -v +5M -f "%Y-%m-%d %H:%M:%S" "$lastBoot" "+%Y-%m-%d %H:%M:%S"`
 		
 		# loop over log entries between the last successful check and lastBootCheckEnd
 		while read -r line ; do
 			restartReason=`echo "$line" | awk -F')' '{print $NF}' | awk '{print $4}'`
 			restartTime=`echo "$line" | awk '{print $1,$2}' | cut -d"." -f1`
 			
-			# skip the first result found - as that was last time / unless we say not too... (first run?)
-			if [[ "$firstReboot" -eq "0" && "$dontSkipFirst" -eq "0" ]]; then
-				firstReboot=1
-			else
-				# log any result other than 5 - set badReboot variable
-				if [ "$restartReason" -ne "5" ]; then
-					if [ "$firstLine" -eq "0" ]; then
-						echo -e "Abnormal restart detected:\n"
-						firstLine=1
-					fi
-					echo -e "[ $restartTime ] Shutdown cause $restartReason"
-					badReboot=1
+			# log any result other than 5 - set badReboot variable
+			if [ "$restartReason" -ne "5" ]; then
+				if [ "$firstLine" -eq "0" ]; then
+					echo -e "Abnormal restart detected:\n"
+					firstLine=1
 				fi
+				echo -e "[$restartTime] Shutdown cause $restartReason"
+				badReboot=1
 			fi
-		done < <(log show --style syslog --predicate 'senderImagePath contains[cd] "AppleSMC"' --start "$lastBootChecked" --end "$lastBootCheckEnd" | egrep shutdown\ cause)
-		
-		# reset the plist with last boot time
-		defaults write "$settings_plist" lastBootChecked -date "$lastBoot +0000"
-		chmod 644 "$settings_plist"
-		
+		done < <(log show --style syslog --predicate 'senderImagePath contains[cd] "AppleSMC"' --start "$lastCheck" --end "$lastBootCheckEnd" | egrep shutdown\ cause)
+				
 		# check if we identified a bad reboot - if so exit with error.
 		if [ "$badReboot" -ne "0" ]; then
+			# we had a bad reboot detected - lets see if it was the last occurrence. if it was not, set us to resubmit last reboot status on next run (will clear error)
+			if [ "$restartReason" -eq "5" ]; then
+				defaults write "$settings_plist" resendLastBoot -bool true
+				chmod 644 "$settings_plist"
+			fi
 			exit 2
 		fi
 		
 		# all good if we got this far - report ok.
-		echo "Last Reboot [$lastBoot ] OK"
+		echo "Last Reboot [$lastBoot] OK"
 		exit 0
 	else
 		echo "Oops - you have 10.11 or earlier... I havent gotten this far yet..."
 		exit 20
 	fi
+else
+	# we have not rebooted since last check - increment the last check time to now
+	defaults write "$settings_plist" lastCheck -date "$thisCheck +0000"
+	chmod 644 "$settings_plist"
 fi
 
 exit 25
