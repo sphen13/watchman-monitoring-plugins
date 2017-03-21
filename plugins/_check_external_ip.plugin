@@ -33,7 +33,7 @@ if [ -z "$lastIP" ]; then
 	lastIP=$currentIP
 fi
 
-if [ ! -z "$currentIP ]; then
+if [ ! -z "$currentIP" ]; then
 	if [ "$lastIP" != "$currentIP" ]; then
 		defaults write "$settings_plist" lastIP "$currentIP"
 		chmod 644 "$settings_plist"
