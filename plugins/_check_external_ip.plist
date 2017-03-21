@@ -5,7 +5,7 @@
 	<key>PluginName</key>
 	<string>External IP</string>
 	<key>PluginVersion</key>
-	<string>1.0</string>
+	<string>1.1</string>
 	<key>PluginOptions</key>
 	<array>
 		<dict>
