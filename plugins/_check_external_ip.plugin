@@ -33,11 +33,16 @@ if [ -z "$lastIP" ]; then
 	lastIP=$currentIP
 fi
 
-if [ "$lastIP" != "$currentIP" ]; then
-	defaults write "$settings_plist" lastIP "$currentIP"
-	chmod 644 "$settings_plist"
-	echo "External IP changed from $lastIP to $currentIP"
-	exit 2
+if [ ! -z "$currentIP ]; then
+	if [ "$lastIP" != "$currentIP" ]; then
+		defaults write "$settings_plist" lastIP "$currentIP"
+		chmod 644 "$settings_plist"
+		echo "External IP changed from $lastIP to $currentIP"
+		exit 2
+	fi
+else
+	echo "No reported IP - Maybe we are offline?"
+	exit 20
 fi
 
 echo "Current external IP: $lastIP"
