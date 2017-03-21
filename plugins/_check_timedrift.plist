@@ -5,7 +5,7 @@
 	<key>PluginName</key>
 	<string>Time Drift</string>
 	<key>PluginVersion</key>
-	<string>0.4</string>
+	<string>1.0</string>
 	<key>PluginOptions</key>
 	<array>
 		<dict>
