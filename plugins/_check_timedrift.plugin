@@ -66,7 +66,9 @@ if [ -f /usr/bin/ntpq ]; then
 		# check if ntp server unreachable
 		if [[ $output == *"suitable"* ]]; then
 			echo -e "NTP server unreachable.  Please check NTP server specified or check DNS/firewall.\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
-			exit 2
+			
+			# honestly not sure why this would happen - unless there were odd networking things going on.  we tested that a ping to google worked... lets just return a notice and not notify.
+			exit 20
 		elif [[ $output == *"no servers"* ]]; then
 			echo -e "NTP server does not exist.  Please check NTP server specified or check DNS.\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
 			exit 2
@@ -74,11 +76,34 @@ if [ -f /usr/bin/ntpq ]; then
 			drift=`echo "$output" | sed -n -e 's/^.*offset [-]*\(.*\) .*$/\1/p'`
 			driftAcceptable=`echo "$secondsOfAcceptableDrift > $drift" | bc -l`
 		
-			if [ "$driftAcceptable" == "0" ]; then
+			if [ "$driftAcceptable" == "0" ]; then							
 				echo -e "NTP time drift greater than $secondsOfAcceptableDrift seconds.  The clock is off by $drift seconds.\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
-				exit 2
+
+				driftedBefore=`defaults read "$settings_plist" ntpReloaded 2>/dev/null`
+				if [ "$driftedBefore" == "1" ]; then
+					# wrut-wroe -- we have already drifted in the previous run and havent fixed it - lets send a legit alert/ticket...
+					echo -e "\nWe have already attempted to reload org.ntp.ntpd."
+					exit 2
+				else
+					# ok so we found an excessive time drift. lets reload the daemon - wait a bit and recheck...
+					launchctl unload /System/Library/LaunchDaemons/org.ntp.ntpd.plist
+					launchctl load /System/Library/LaunchDaemons/org.ntp.ntpd.plist
+					sleep 10
+					driftNew=`ntpdate -q "$ntpServer" 2>&1 | tail -1 | sed -n -e 's/^.*offset [-]*\(.*\) .*$/\1/p'`
+					echo -e "\nRELOADING org.ntp.ntpd....\n\nNew time drift: $driftNew"
+				
+					# since we triggered a reload we want to know about it - lets set a preference key
+					defaults write "$settings_plist" ntpReloaded -bool true		
+					chmod 644 "$settings_plist"
+				
+					# exit with code which will generate an alert/ticket regardless of anything else...
+					exit 200
+				fi
+
 			elif [ "$driftAcceptable" == "1" ]; then
 				echo -e "NTP time drift OK: $drift seconds.\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
+				defaults write "$settings_plist" ntpReloaded -bool false		
+				chmod 644 "$settings_plist"
 				exit 0
 			else
 				echo -e "Oops - this should not happen...  [$drift]\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
