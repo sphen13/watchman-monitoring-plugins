@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# PLUGIN: Check MunkiReport Link
+# AUTHOR: Stephen Boyle @sphen13
+# DATE:   2017-10-25
+
+# read prefpane settings & set defaults
+pluginName="_check_munkireport_link"
+settings_plist="/Library/MonitoringClient/PluginSupport/"$pluginName"_settings.plist"
+clientSettings="/Library/MonitoringClient/ClientSettings.plist"
+PlistBuddy="/usr/libexec/PlistBuddy"
+
+if [ ! -f $settings_plist ]; then
+	# populate plist with defaults
+	defaults write "$settings_plist" PrefPaneVisibility -bool false
+	defaults write "$settings_plist" Initially_Disabled -bool false
+	chmod 644 "$settings_plist"
+fi
+
+baseURL=`defaults read /Library/Preferences/MunkiReport.plist BaseUrl 2>/dev/null`
+serial=`ioreg -c "IOPlatformExpertDevice" | awk -F '"' '/IOPlatformSerialNumber/ {print $4}'`
+
+if [ -z "$baseURL" ]; then
+	# munkireport not active
+	exit 25
+fi
+
+# munkireport active - lets send the info!
+echo "<a class=\"btn btn-xs\" target=\"blank\" href=\"https://report.trmacs.com/index.php?/clients/detail/C02LL95MFH00\">View in MunkiReport</a>"
+exit 0
