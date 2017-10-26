@@ -26,5 +26,5 @@ if [ -z "$baseURL" ]; then
 fi
 
 # munkireport active - lets send the info!
-echo "<a class=\"btn btn-xs\" target=\"blank\" href=\"https://report.trmacs.com/index.php?/clients/detail/C02LL95MFH00\">View in MunkiReport</a>"
+echo "<a class=\"btn btn-xs\" target=\"blank\" href=\"$baseURL/index.php?/clients/detail/$serial\">View in MunkiReport</a>"
 exit 0
