@@ -5,7 +5,7 @@
 	<key>PluginName</key>
 	<string>Time Drift</string>
 	<key>PluginVersion</key>
-	<string>1.1</string>
+	<string>1.2</string>
 	<key>PluginOptions</key>
 	<array>
 		<dict>
@@ -42,7 +42,7 @@
 				<string></string>
 			</dict>
 		</dict>
-		<dict>
+    <dict>
 			<key>SettingStorageKey</key>
 			<string>secondsOfAcceptableDrift</string>
 			<key>SettingStoragePath</key>
@@ -57,6 +57,23 @@
 				<string>NumberPicker</string>
 				<key>Value</key>
 				<string>0-300</string>
+			</dict>
+		</dict>
+    <dict>
+			<key>SettingStorageKey</key>
+			<string>attemptRemediation</string>
+			<key>SettingStoragePath</key>
+			<string>/Library/MonitoringClient/PluginSupport/_check_timedrift_settings.plist</string>
+			<key>SettingTitle</key>
+			<string>Attempt to remediate drift once per occurance</string>
+			<key>SettingTitleHint</key>
+			<string></string>
+			<key>SettingType</key>
+			<dict>
+				<key>Type</key>
+				<string>Checkbox</string>
+				<key>Value</key>
+				<string>Positive</string>
 			</dict>
 		</dict>
 	</array>

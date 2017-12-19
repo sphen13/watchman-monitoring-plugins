@@ -4,9 +4,7 @@
 # AUTHOR: Stephen Boyle @sphen13
 # DATE:   2017-02-23
 
-# idea: try to fix it!
-# launchctl unload /System/Library/LaunchDaemons/org.ntp.ntpd.plist 
-# launchctl load /System/Library/LaunchDaemons/org.ntp.ntpd.plist
+# 2017-12-19 - add pref for remediation
 
 # set defaults
 pluginName="_check_timedrift"
@@ -22,10 +20,11 @@ if [ ! -f $settings_plist ]; then
 	# populate plist with defaults
 	defaults write "$settings_plist" ntpServer -string "$ntpServer"
 	defaults write "$settings_plist" secondsOfAcceptableDrift $secondsOfAcceptableDrift
+	defaults write "$settings_plist" attemptRemediation -bool false
 	defaults write "$settings_plist" PrefPaneVisibility -bool true
 	defaults write "$settings_plist" Initially_Disabled -bool true
 	chmod 644 "$settings_plist"
-	
+
 	#server check
 	serverCheck=`ps -ax | grep -e "com.apple.serverd" -e "servermgrd" -e "fmserver" -e "4D.app" -e "LightSpeed Server" -e "MPServerDaemon" | grep -v grep`
 	if [ ! -z "$serverCheck" ]; then
@@ -35,7 +34,7 @@ if [ ! -f $settings_plist ]; then
 		isDisabled=`"$PlistBuddy" -c "Print :PluginsDisabled" "$clientSettings" | grep "$pluginName"`
 		if [ -z "$isDisabled" ]; then
 			"$PlistBuddy" -c "Add :PluginsDisabled: string $pluginName.plugin" "$clientSettings"
-		fi	
+		fi
 	fi
 	exit 25
 else
@@ -47,13 +46,19 @@ else
 	fi
 	isset=`defaults read "$settings_plist" secondsOfAcceptableDrift 2>/dev/null`
 	if [ -z "$isset" ]; then
-		defaults write "$settings_plist" secondsOfAcceptableDrift $secondsOfAcceptableDrift		
+		defaults write "$settings_plist" secondsOfAcceptableDrift $secondsOfAcceptableDrift
+		chmod 644 "$settings_plist"
+	fi
+	isset=`defaults read "$settings_plist" attemptRemediation 2>/dev/null`
+	if [ -z "$isset" ]; then
+		defaults write "$settings_plist" attemptRemediation -bool false
 		chmod 644 "$settings_plist"
 	fi
 fi
 
 ntpServer=`defaults read "$settings_plist" ntpServer`
 secondsOfAcceptableDrift=`defaults read "$settings_plist" secondsOfAcceptableDrift`
+attemptRemediation=`defaults read "$settings_plist" attemptRemediation`
 
 # actually do the checks now...
 if [ -f /usr/bin/ntpq ]; then
@@ -62,47 +67,54 @@ if [ -f /usr/bin/ntpq ]; then
 	if [ ! -z "$weAreOnline" ]; then
 		# check for drift
 		output=`ntpdate -q "$ntpServer" 2>&1 | tail -1`
-		
+
 		# check if ntp server unreachable
 		if [[ $output == *"suitable"* ]]; then
 			echo -e "NTP server unreachable.  Please check NTP server specified or check DNS/firewall.\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
-			
+
 			# honestly not sure why this would happen - unless there were odd networking things going on.  we tested that a ping to google worked... lets just return a notice and not notify.
 			exit 20
 		elif [[ $output == *"no servers"* ]]; then
 			echo -e "NTP server does not exist.  Please check NTP server specified or check DNS.\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
+
+			# should we do more checking here?  i have seen false errors of this?
 			exit 2
 		else
 			drift=`echo "$output" | sed -n -e 's/^.*offset [-]*\(.*\) .*$/\1/p'`
 			driftAcceptable=`echo "$secondsOfAcceptableDrift > $drift" | bc -l`
-		
-			if [ "$driftAcceptable" == "0" ]; then							
+
+			if [ "$driftAcceptable" == "0" ]; then
 				echo -e "NTP time drift greater than $secondsOfAcceptableDrift seconds.  The clock is off by $drift seconds.\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
 
-				driftedBefore=`defaults read "$settings_plist" ntpReloaded 2>/dev/null`
-				if [ "$driftedBefore" == "1" ]; then
-					# wrut-wroe -- we have already drifted in the previous run and havent fixed it - lets send a legit alert/ticket...
-					echo -e "\nWe have already attempted to reload org.ntp.ntpd."
-					exit 2
-				else
-					# ok so we found an excessive time drift. lets reload the daemon - wait a bit and recheck...
-					launchctl unload /System/Library/LaunchDaemons/org.ntp.ntpd.plist
-					launchctl load /System/Library/LaunchDaemons/org.ntp.ntpd.plist
-					sleep 10
-					driftNew=`ntpdate -q "$ntpServer" 2>&1 | tail -1 | sed -n -e 's/^.*offset [-]*\(.*\) .*$/\1/p'`
-					echo -e "\nRELOADING org.ntp.ntpd....\n\nNew time drift: $driftNew"
-				
-					# since we triggered a reload we want to know about it - lets set a preference key
-					defaults write "$settings_plist" ntpReloaded -bool true		
-					chmod 644 "$settings_plist"
-				
-					# exit with code which will generate an alert/ticket regardless of anything else...
-					exit 200
-				fi
+				# should we attempt to fix?
+				if [ "$attemptRemediation" == "1" ]; then
+					driftedBefore=`defaults read "$settings_plist" ntpReloaded 2>/dev/null`
+					if [ "$driftedBefore" == "1" ]; then
+						# wrut-wroe -- we have already drifted in the previous run and havent fixed it - lets send a legit alert/ticket...
+						echo -e "\nWe have already attempted to reload org.ntp.ntpd."
+						exit 2
+					else
+						# ok so we found an excessive time drift. lets reload the daemon - wait a bit and recheck...
+						launchctl unload /System/Library/LaunchDaemons/org.ntp.ntpd.plist
+						launchctl load /System/Library/LaunchDaemons/org.ntp.ntpd.plist
+						sleep 10
+						driftNew=`ntpdate -q "$ntpServer" 2>&1 | tail -1 | sed -n -e 's/^.*offset [-]*\(.*\) .*$/\1/p'`
+						echo -e "\nRELOADING org.ntp.ntpd....\n\nNew time drift: $driftNew"
 
+						# since we triggered a reload we want to know about it - lets set a preference key
+						defaults write "$settings_plist" ntpReloaded -bool true
+						chmod 644 "$settings_plist"
+
+						# exit with code which will generate an alert/ticket regardless of anything else...
+						exit 200
+					fi
+				else
+					# notify
+					exit 2
+				fi
 			elif [ "$driftAcceptable" == "1" ]; then
 				echo -e "NTP time drift OK: $drift seconds.\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
-				defaults write "$settings_plist" ntpReloaded -bool false		
+				defaults write "$settings_plist" ntpReloaded -bool false
 				chmod 644 "$settings_plist"
 				exit 0
 			else
