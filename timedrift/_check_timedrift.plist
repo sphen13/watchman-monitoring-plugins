@@ -42,7 +42,7 @@
 				<string></string>
 			</dict>
 		</dict>
-    <dict>
+		<dict>
 			<key>SettingStorageKey</key>
 			<string>secondsOfAcceptableDrift</string>
 			<key>SettingStoragePath</key>
@@ -59,7 +59,7 @@
 				<string>0-300</string>
 			</dict>
 		</dict>
-    <dict>
+		<dict>
 			<key>SettingStorageKey</key>
 			<string>attemptRemediation</string>
 			<key>SettingStoragePath</key>
