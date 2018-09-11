@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# PLUGIN: Large Folders
+# AUTHOR: Stephen Boyle @sphen13
+# DATE:   2018-09-11
+
+# read prefpane settings & set defaults
+pluginName="_check_folder_sizes"
+pluginSupport="/Library/MonitoringClient/PluginSupport"
+settings_plist="${pluginSupport}/${pluginName}_settings.plist"
+folder_size_output="${pluginSupport}/${pluginName}.txt"
+clientSettings="/Library/MonitoringClient/ClientSettings.plist"
+PlistBuddy="/usr/libexec/PlistBuddy"
+
+if [ ! -f ${settings_plist} ]; then
+	# populate plist with defaults
+	defaults write "${settings_plist}" PrefPaneVisibility -bool false
+	defaults write "${settings_plist}" Initially_Disabled -bool false
+	chmod 644 "${settings_plist}"
+fi
+
+if [ ! -e ${folder_size_output} ]; then
+	# we have no folder size report
+	exit 25
+fi
+
+thisCheck=`date "+%Y-%m-%d %H:%M:%S"`
+
+# read in last time we submitted
+isset=`defaults read "${settings_plist}" lastSubmission 2>/dev/null`
+if [ ! -z "$isset" ]; then
+	lastSubmission=`defaults read "${settings_plist}" lastSubmission | awk '{print $1,$2}'`
+
+	# touch a file with the last time we submitted
+	lastSubmissionTouch=`date -j -f "%Y-%m-%d %H:%M:%S" "$lastSubmission" "+%y%m%d%H%M.%S"`
+	touch -t "$lastSubmissionTouch" "/tmp/.${pluginName}"
+
+	# find if there is a new folder report
+	outputFile=$(find ${pluginSupport} -name ${pluginName}.txt -newer /tmp/.${pluginName} -print)
+fi
+
+# lets return the folder size report if we found a newer one or never submitted before
+if [ ! -z "${outputFile}" ] || [ -z "$isset" ] ; then
+	cat ${folder_size_output}
+	lastSubmission=${thisCheck}
+
+	# save submission date to settings
+	defaults write "$settings_plist" lastSubmission -date "$thisCheck +0000"
+
+	exit 0
+fi
+
+exit 25
