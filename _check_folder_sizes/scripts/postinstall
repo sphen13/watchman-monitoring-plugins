@@ -1,0 +1,5 @@
+#!/bin/bash
+
+launchctl unload -w launchctl unload -w /Library/LaunchDaemons/com.monitoringclient.check_folder_sizes.plist
+launchctl load -w launchctl unload -w /Library/LaunchDaemons/com.monitoringclient.check_folder_sizes.plist
+exit 0

@@ -6,8 +6,6 @@
    <string>com.monitoringclient.check_folder_sizes</string>
    <key>ProcessType</key>
    <string>Background</string>
-   <key>Program</key>
-   <string>/Library/MonitoringClient/PluginSupport/_check_folder_sizes.sh</string>
    <key>ProgramArguments</key>
    <array>
        <string>/Library/MonitoringClient/PluginSupport/_check_folder_sizes.sh</string>
