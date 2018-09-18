@@ -2,22 +2,23 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-   <key>Label</key>
-   <string>com.monitoringclient.check_folder_sizes</string>
-   <key>ProcessType</key>
-   <string>Background</string>
-   <key>ProgramArguments</key>
-   <array>
-       <string>/Library/MonitoringClient/PluginSupport/_check_folder_sizes.sh</string>
-   </array>
-   <key>RunAtLoad</key>
-   <true/>
-   <key>StartCalendarInterval</key>
-   <dict>
-       <key>Hour</key>
-       <integer>0</integer>
-       <key>Minute</key>
-       <integer>0</integer>
-   </dict>
+  <key>Label</key>
+  <string>com.monitoringclient.check_folder_sizes</string>
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>sh</string>
+    <string>/Library/MonitoringClient/PluginSupport/_check_folder_sizes.sh</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>0</integer>
+    <key>Minute</key>
+    <integer>0</integer>
+  </dict>
 </dict>
 </plist>
