@@ -11,8 +11,7 @@ daysBeforeAlert=7
 settings_plist="/Library/MonitoringClient/PluginSupport/"$pluginName"_settings.plist"
 clientSettings="/Library/MonitoringClient/ClientSettings.plist"
 munkiPrefs="/Library/Preferences/ManagedInstalls.plist"
-#munkiReport="/Library/Managed Installs/ManagedInstallReport.plist"
-munkiReport="/Users/sphen/Desktop/ManagedInstallReport.plist"
+munkiReport="/Library/Managed Installs/ManagedInstallReport.plist"
 PlistBuddy="/usr/libexec/PlistBuddy -c"
 
 # read settings and create if needed.
