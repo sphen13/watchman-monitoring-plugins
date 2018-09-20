@@ -1,0 +1,106 @@
+#!/bin/bash
+
+# PLUGIN: Munki Status
+# AUTHOR: Stephen Boyle @sphen13
+# DATE:   2018-09-19
+
+# set defaults
+pluginName="_check_munki"
+daysBeforeAlert=7
+
+settings_plist="/Library/MonitoringClient/PluginSupport/"$pluginName"_settings.plist"
+clientSettings="/Library/MonitoringClient/ClientSettings.plist"
+munkiPrefs="/Library/Preferences/ManagedInstalls.plist"
+#munkiReport="/Library/Managed Installs/ManagedInstallReport.plist"
+munkiReport="/Users/sphen/Desktop/ManagedInstallReport.plist"
+PlistBuddy="/usr/libexec/PlistBuddy -c"
+
+# read settings and create if needed.
+if [ ! -f $settings_plist ]; then
+	# populate plist with defaults
+	defaults write "$settings_plist" daysBeforeAlert $daysBeforeAlert
+	defaults write "$settings_plist" PrefPaneVisibility -bool true
+	defaults write "$settings_plist" Initially_Disabled -bool false
+	chmod 644 "$settings_plist"
+
+	exit 25
+else
+	# plist exists - lets check for each value
+	isset=`defaults read "$settings_plist" daysBeforeAlert 2>/dev/null`
+	if [ -z "$isset" ]; then
+		defaults write "$settings_plist" daysBeforeAlert $daysBeforeAlert
+		chmod 644 "$settings_plist"
+	fi
+fi
+
+# read in our settings
+daysBeforeAlert=`defaults read "$settings_plist" daysBeforeAlert`
+
+# lets do some stuff
+if [ -e "$munkiPrefs" ]; then
+	# read how many days we have had pending updates
+	oldestUpdateDays=`defaults read "${munkiPrefs}" OldestUpdateDays 2>/dev/null`
+
+	# read warnings
+	warnings=`$PlistBuddy "Print :Warnings:" "${munkiReport}" 2>/dev/null | sed -e 1d -e '$d' | sort | uniq`
+
+	# read errors:
+	errors=`$PlistBuddy "Print :Errors:" "${munkiReport}" 2>/dev/null | sed -e 1d -e '$d' | sort | uniq`
+
+	# items to be installed
+	pendingInstalls=()
+	i=0
+	while true ; do
+		#IFS=$'\n'
+		item=`$PlistBuddy "Print :ItemsToInstall:$i:display_name" "${munkiReport}" 2>/dev/null`
+		if [[ ${item} ]]; then
+			pendingInstalls+=("${item}")
+		else
+			break
+		fi
+		i=$(($i + 1))
+	done
+
+	# problem installs
+	problemInstalls=`$PlistBuddy "Print :ProblemInstalls:" "${munkiReport}" 2>/dev/null | sed -e 1d -e '$d'`
+
+	# process for alerts
+	if (( $(echo "$oldestUpdateDays > $daysBeforeAlert" |bc -l) )); then
+		# lets notify that there have been pending updates for too long
+		exitStatus=2
+		printf "There have been pending munki updates for $oldestUpdateDays days.\n\n"
+	fi
+
+	if [[ ${errors} ]]; then
+		# lets notify that there are errors
+		exitStatus=2
+		printf 'Munki Errors:\n%s\n\n' "${errors}"
+	fi
+
+	if [[ ${problemInstalls} ]]; then
+		# lets notify that there are problem installs
+		exitStatus=2
+		printf 'Munki has problematic installs:\n%s\n\n' "${problemInstalls}"
+	fi
+
+	if [[ ${warnings} ]]; then
+		# lets notify that there are warnings. set exitStatus if its not previously set
+		if [[ -z ${exitStatus} ]]; then exitStatus=20; fi
+		printf 'Munki Warnings:\n%s\n\n' "${warnings}"
+	fi
+
+	if [[ ${pendingInstalls[@]} ]]; then
+		# lets notify that there are warnings. set exitStatus if its not previously set
+		if [[ -z ${exitStatus} ]]; then exitStatus=0; fi
+		echo 'Pending Munki Installs:'
+		printf '    %s\n' "${pendingInstalls[@]}"
+		printf '\n'
+	fi
+
+	# if we havent hit an exit status assume all is good
+	if [[ -z ${exitStatus} ]]; then exitStatus=0; fi
+	exit $exitStatus
+fi
+
+# munki is not there...
+exit 25
