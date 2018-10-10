@@ -36,7 +36,7 @@ fi
 daysBeforeAlert=`defaults read "$settings_plist" daysBeforeAlert`
 
 # lets do some stuff
-if [ -e "$munkiPrefs" ]; then
+if [ -e "$munkiPrefs" ] && [ -e "$munkiReport" ]; then
 	# read how many days we have had pending updates
 	oldestUpdateDays=`defaults read "${munkiPrefs}" OldestUpdateDays 2>/dev/null`
 
@@ -61,7 +61,7 @@ if [ -e "$munkiPrefs" ]; then
 	done
 
 	# problem installs
-	problemInstalls=`$PlistBuddy "Print :ProblemInstalls:" "${munkiReport}" 2>/dev/null | sed -e 1d -e '$d'`
+	#problemInstalls=`$PlistBuddy "Print :ProblemInstalls:" "${munkiReport}" 2>/dev/null | sed -e 1d -e '$d'`
 
 	# process for alerts
 	if (( $(echo "$oldestUpdateDays > $daysBeforeAlert" |bc -l) )); then
@@ -71,33 +71,57 @@ if [ -e "$munkiPrefs" ]; then
 	fi
 
 	if [[ ${errors} ]]; then
-		# lets notify that there are errors
-		exitStatus=2
-		printf 'Munki Errors:\n%s\n\n' "${errors}"
+		# populate $temp with errors we want to not alert on
+		temp=$(echo "${errors}" | grep "Unexpected error in updatecheck:")
+		temp+=$(echo "${errors}" | grep "The request timed out")
+		temp+=$(echo "${errors}" | grep "The network connection was lost")
+		temp+=$(echo "${errors}" | grep "softwareupdate error: 100")
+		temp+=$(echo "${errors}" | grep "Could not download all available Apple updates")
+		temp+=$(echo "${errors}" | grep "Unexpected error in munkilib.installer")
+		temp+=$(echo "${errors}" | grep "The request timed out")
+		if [[ -z ${temp} ]]; then
+			# lets notify that there are errors
+			exitStatus=2
+		fi
+		if [[ -z ${exitStatus} ]]; then exitStatus=20; fi
+		printf '### Munki Errors:\n%s\n\n' "${errors}"
 	fi
 
 	if [[ ${problemInstalls} ]]; then
 		# lets notify that there are problem installs
 		exitStatus=2
-		printf 'Munki has problematic installs:\n%s\n\n' "${problemInstalls}"
+		printf '### Munki has problematic installs:\n%s\n\n' "${problemInstalls}"
 	fi
 
 	if [[ ${warnings} ]]; then
 		# lets notify that there are warnings. set exitStatus if its not previously set
+		# populate $temp with errors we want to not alert on
+		temp=$(echo "${warnings}" | grep "The Internet connection appears to be offline")
+		if [[ ${temp} ]]; then
+			# lets ignore alerts this time around even if we set exitStatus already
+			exitStatus=20
+		fi
+
 		if [[ -z ${exitStatus} ]]; then exitStatus=20; fi
-		printf 'Munki Warnings:\n%s\n\n' "${warnings}"
+
+		# only report warnings if ther are no errors:
+		if [[ "${exitStatus}" -ne "2" ]]; then printf '### Munki Warnings:\n%s\n\n' "${warnings}"; fi
 	fi
 
 	if [[ ${pendingInstalls[@]} ]]; then
 		# lets notify that there are warnings. set exitStatus if its not previously set
+		### can we see pending sus installs too??
 		if [[ -z ${exitStatus} ]]; then exitStatus=0; fi
-		echo 'Pending Munki Installs:'
+		echo '### Pending Munki Installs:'
 		printf '    %s\n' "${pendingInstalls[@]}"
 		printf '\n'
 	fi
 
 	# if we havent hit an exit status assume all is good
-	if [[ -z ${exitStatus} ]]; then exitStatus=0; fi
+	if [[ -z ${exitStatus} ]]; then
+		exitStatus=0
+		echo 'Munki is functioning well.'
+	fi
 	exit $exitStatus
 fi
 
