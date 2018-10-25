@@ -20,7 +20,7 @@ if [ ! -f $settings_plist ]; then
 	# populate plist with defaults
 	defaults write "$settings_plist" ntpServer -string "$ntpServer"
 	defaults write "$settings_plist" secondsOfAcceptableDrift $secondsOfAcceptableDrift
-	defaults write "$settings_plist" attemptRemediation -bool false
+	defaults write "$settings_plist" attemptRemediation -bool true
 	defaults write "$settings_plist" PrefPaneVisibility -bool true
 	defaults write "$settings_plist" Initially_Disabled -bool true
 	chmod 644 "$settings_plist"
