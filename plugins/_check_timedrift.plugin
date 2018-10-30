@@ -1,19 +1,28 @@
 #!/bin/bash
 
-# PLUGIN: TimeDrift
-# AUTHOR: Stephen Boyle @sphen13
-# DATE:   2017-02-23
+# PLUGIN: 	TimeDrift
+# AUTHOR: 	Stephen Boyle @sphen13
+# DATE:   	2017-02-23
+# VERSION:	1.3
 
-# 2017-12-19 - add pref for remediation
+# 2017-02-23 - v1
+# 2017-12-19 - v1.2:
+#								add pref for remediation
+# 2018-10-29 - v1.3
+#								default remediation to true
+#								switch to us.pool.ntp.org by default
+#								change how we resync time on < 10.14
+#								enable time sync checks and update on 10.14
 
 # set defaults
 pluginName="_check_timedrift"
-ntpServer="time.apple.com"
+ntpServer="us.pool.ntp.org"
 secondsOfAcceptableDrift=120
 
 settings_plist="/Library/MonitoringClient/PluginSupport/"$pluginName"_settings.plist"
 clientSettings="/Library/MonitoringClient/ClientSettings.plist"
 PlistBuddy="/usr/libexec/PlistBuddy"
+osVersion=$(sw_vers -productVersion | cut -d. -f2)
 
 # read settings and create if needed. disable by default / unless we are a server...
 if [ ! -f $settings_plist ]; then
@@ -61,72 +70,88 @@ secondsOfAcceptableDrift=`defaults read "$settings_plist" secondsOfAcceptableDri
 attemptRemediation=`defaults read "$settings_plist" attemptRemediation`
 
 # actually do the checks now...
-if [ -f /usr/bin/ntpq ]; then
-	# are we online?
-	weAreOnline=`ping -c 1 -W 900 8.8.8.8 > /dev/null && echo '1'`
-	if [ ! -z "$weAreOnline" ]; then
-		# check for drift
+# are we online?
+weAreOnline=`ping -c 1 -W 900 8.8.8.8 > /dev/null && echo '1'`
+if [ ! -z "$weAreOnline" ]; then
+	# check for drift
+	if [ "$osVersion" -lt "14" ]; then
 		output=`ntpdate -q "$ntpServer" 2>&1 | tail -1`
+	else
+		output=`sntp -t 10 "$ntpServer" 2>/dev/null | tail -1`
+	fi
 
-		# check if ntp server unreachable
-		if [[ $output == *"suitable"* ]]; then
-			echo -e "NTP server unreachable.  Please check NTP server specified or check DNS/firewall.\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
+	# check if ntp server unreachable
+	if [[ $output == *"suitable"* ]] || [[ $output == *"response after"* ]]; then
+		echo -e "NTP server unreachable.  Please check NTP server specified or check DNS/firewall.\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
 
-			# honestly not sure why this would happen - unless there were odd networking things going on.  we tested that a ping to google worked... lets just return a notice and not notify.
-			exit 20
-		elif [[ $output == *"no servers"* ]]; then
-			echo -e "NTP server does not exist.  Please check NTP server specified or check DNS.\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
+		# honestly not sure why this would happen - unless there were odd networking things going on.  we tested that a ping to google worked... lets just return a notice and not notify.
+		exit 20
+	elif [[ $output == *"no servers"* ]] || [[ $output == *"lookup error"* ]]; then
+		echo -e "NTP server does not exist.  Please check NTP server specified or check DNS.\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
 
-			# should we do more checking here?  i have seen false errors of this?
-			exit 2
-		else
+		# should we do more checking here?  i have seen false errors of this? lets return notice but dont alert for now. i was thinking about handling this differently, hence the different if block.
+		exit 20
+	else
+		if [ "$osVersion" -lt "14" ]; then
 			drift=`echo "$output" | sed -n -e 's/^.*offset [-]*\(.*\) .*$/\1/p'`
-			driftAcceptable=`echo "$secondsOfAcceptableDrift > $drift" | bc -l`
+		else
+			drift=`echo "$output" | sed -n -e 's/^.*) [+-]\(.*\) \+\/.*$/\1/p'`
+		fi
+		driftAcceptable=`echo "$secondsOfAcceptableDrift > $drift" | bc -l`
 
-			if [ "$driftAcceptable" == "0" ]; then
-				echo -e "NTP time drift greater than $secondsOfAcceptableDrift seconds.  The clock is off by $drift seconds.\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
+		if [ "$driftAcceptable" == "0" ]; then
+			echo -e "NTP time drift greater than $secondsOfAcceptableDrift seconds.  The clock is off by $drift seconds.\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
 
-				# should we attempt to fix?
-				if [ "$attemptRemediation" == "1" ]; then
-					driftedBefore=`defaults read "$settings_plist" ntpReloaded 2>/dev/null`
-					if [ "$driftedBefore" == "1" ]; then
-						# wrut-wroe -- we have already drifted in the previous run and havent fixed it - lets send a legit alert/ticket...
-						echo -e "\nWe have already attempted to reload org.ntp.ntpd."
-						exit 2
+			# should we attempt to fix?
+			if [ "$attemptRemediation" == "1" ]; then
+				driftedBefore=`defaults read "$settings_plist" ntpReloaded 2>/dev/null`
+				if [ "$driftedBefore" == "1" ]; then
+					# wrut-wroe -- we have already drifted in the previous run and havent fixed it - lets send a legit alert/ticket...
+					echo -e "\nWe have already attempted to adjust the time."
+					exit 2
+				else
+					# ok so we found an excessive time drift. lets reload the daemon - wait a bit and recheck...
+					echo -e "\nRESETTING ntp....\n\nNew time drift: $driftNew"
+					if [ "$osVersion" -lt "14" ]; then
+						ntpdate -u $(systemsetup -getnetworktimeserver|awk '{print $4}')
 					else
-						# ok so we found an excessive time drift. lets reload the daemon - wait a bit and recheck...
+						sntp -S -t 10 $(systemsetup -getnetworktimeserver|awk '{print $4}') 2>/dev/null | tail -1
+					fi
+
+					# lets reload ntp if we can just to be thorough
+					if [ -e /System/Library/LaunchDaemons/org.ntp.ntpd.plist ]; then
 						launchctl unload /System/Library/LaunchDaemons/org.ntp.ntpd.plist
 						launchctl load /System/Library/LaunchDaemons/org.ntp.ntpd.plist
 						sleep 10
-						driftNew=`ntpdate -q "$ntpServer" 2>&1 | tail -1 | sed -n -e 's/^.*offset [-]*\(.*\) .*$/\1/p'`
-						echo -e "\nRELOADING org.ntp.ntpd....\n\nNew time drift: $driftNew"
-
-						# since we triggered a reload we want to know about it - lets set a preference key
-						defaults write "$settings_plist" ntpReloaded -bool true
-						chmod 644 "$settings_plist"
-
-						# exit with code which will generate an alert/ticket regardless of anything else...
-						exit 200
 					fi
-				else
-					# notify
-					exit 2
+					if [ "$osVersion" -lt "14" ]; then
+						driftNew=`ntpdate -q "$ntpServer" 2>&1 | tail -1 | sed -n -e 's/^.*offset [-]*\(.*\) .*$/\1/p'`
+					else
+						driftNew=`sntp -t 10 "$ntpServer" 2>/dev/null | tail -1 | sed -n -e 's/^.*) [+-]\(.*\) \+\/.*$/\1/p'`
+					fi
+
+					# since we triggered a reload we want to know about it - lets set a preference key
+					defaults write "$settings_plist" ntpReloaded -bool true
+					chmod 644 "$settings_plist"
+
+					# exit with code which will generate an alert/ticket regardless of anything else...
+					exit 200
 				fi
-			elif [ "$driftAcceptable" == "1" ]; then
-				echo -e "NTP time drift OK: $drift seconds.\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
-				defaults write "$settings_plist" ntpReloaded -bool false
-				chmod 644 "$settings_plist"
-				exit 0
 			else
-				echo -e "Oops - this should not happen...  [$drift]\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
+				# notify
 				exit 2
 			fi
+		elif [ "$driftAcceptable" == "1" ]; then
+			echo -e "NTP time drift OK: $drift seconds.\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
+			defaults write "$settings_plist" ntpReloaded -bool false
+			chmod 644 "$settings_plist"
+			exit 0
+		else
+			echo -e "Oops - this should not happen...  [$drift]\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
+			exit 2
 		fi
-	else
-		echo "Internet is not reachable - Skipping drift check..."
-		exit 20
 	fi
+else
+	echo "Internet is not reachable - Skipping drift check..."
+	exit 20
 fi
-
-echo "ntpq binary not found"
-exit 2
