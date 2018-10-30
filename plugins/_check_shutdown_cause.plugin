@@ -1,14 +1,54 @@
 #!/bin/bash
 
-# PLUGIN: Check Shutdown Cause
-# AUTHOR: Stephen Boyle @sphen13
-# DATE:   2017-02-26
+# PLUGIN: 	Check Shutdown Cause
+# AUTHOR: 	Stephen Boyle @sphen13
+# DATE:   	2017-02-26
+# VERSION:	0.3
+
+# 2017-02-26	v0.1-0.2
+# 2018-10-30	v0.3
+#								add shutdown cause description
+#								add logic to prevent certain shutdown cause alerts
+#								add logic to only warn on certain shutdown causes
 
 # read prefpane settings & set defaults
 settings_plist='/Library/MonitoringClient/PluginSupport/_check_shutdown_cause_settings.plist'
 
+# define shutdown causes - from https://georgegarside.com/blog/macos/shutdown-causes/
+shutdownCauseDescription=(
+	'5::Correct Shut Down.'
+	'3::Hard shutdown.'
+	'0::Power disconnected.'
+	'-3::Multiple temperature sensors exceeded the defined limit.'
+	'-60::Bad master directory block (badMDBErr).'
+	'-61::Watchdog timer detected unresponsive application, shutting down the system.'
+	'-62::Watchdog timer detected unresponsive application, restarting the system.'
+	'-65::unknown'
+	'-71::SO-DIMM Memory temperature exceeds limits.'
+	'-74::Battery temperature exceeds limits.'
+	'-75::Communication issue with AC adapter.'
+	'-78::Incorrect current value coming from AC adapter.'
+	'-79::Incorrect current value coming from battery.'
+	'-86::Proximity temperature exceeds limits.'
+	'-95::CPU temperature exceeds limits.'
+	'-100::Power supply temperature exceeds limits.'
+	'-103::Battery cell under voltage detected.'
+	'-104::unknown'
+	'-108::unverified'
+	'-112::unverified'
+	'-127::PMU forced shutdown.'
+	'-128::unknown'
+)
+# set the shutdown causes we do not want to report
+shutdownCauseOK=('5')
+# set the shutdown causes we only want to warn on
+shutdownCauseWarn=('3' '0')
+
 currentOS=`sw_vers -productVersion | cut -d'.' -f2`
 lastBoot=`sysctl kern.boottime | cut -d"}" -f2 | awk '{print $1,$2,$3,$4,$5}'`
+
+# declare function
+containsElement () { for e in "${@:2}"; do [[ "$e" = "$1" ]] && return 0; done; return 1; }
 
 if [ ! -f $settings_plist ]; then
 	# populate plist with defaults - set firstRun and exit silently
@@ -48,9 +88,9 @@ fi
 defaults write "$settings_plist" resendLastBoot -bool false
 chmod 644 "$settings_plist"
 
-
 firstLine=0
 badReboot=0
+warnReboot=0
 lastBootSec=`date -j -f "%Y-%m-%d %H:%M:%S" "$lastBoot" "+%s"`
 lastCheckSec=`date -j -f "%Y-%m-%d %H:%M:%S" "$lastCheck" "+%s"`
 
@@ -70,30 +110,30 @@ if [ "$lastCheckSec" -lt "$lastBootSec" ]; then
 			restartReason=`echo "$line" | awk -F')' '{print $NF}' | awk '{print $4}'`
 			restartTime=`echo "$line" | awk '{print $1,$2}' | cut -d"." -f1`
 
-			# log any result other than 5 - set badReboot variable
-			if [ "$restartReason" -ne "5" ]; then
+			#echo "[$restartTime] - $restartReason"																				# DEBUG
+
+			# log any result other than $shutdownCauseOK - set badReboot variable
+			if ! containsElement "$restartReason" "${shutdownCauseOK[@]}"; then
 				if [ "$firstLine" -eq "0" ]; then
 					echo -e "Abnormal restart detected:\n"
 					firstLine=1
 				fi
 				echo -e "[$restartTime] Shutdown cause $restartReason"
-				badReboot=1
+				for index in "${shutdownCauseDescription[@]}" ; do
+				  KEY="${index%%::*}"
+				  VALUE="${index##*::}"
+				  if [ "$KEY" == "$restartReason" ]; then
+				    echo -e "-- $VALUE"
+				    break
+				  fi
+				done
+				if containsElement "$restartReason" "${shutdownCauseWarn[@]}"; then
+					warnReboot=1
+				else
+					badReboot=1
+				fi
 			fi
 		done < <(log show --style syslog --predicate 'senderImagePath contains[cd] "AppleSMC"' --start "$lastCheck" --end "$lastBootCheckEnd" | egrep shutdown\ cause)
-
-		# check if we identified a bad reboot - if so exit with error.
-		if [ "$badReboot" -ne "0" ]; then
-			# we had a bad reboot detected - lets see if it was the last occurrence. if it was not, set us to resubmit last reboot status on next run (will clear error)
-			if [ "$restartReason" -eq "5" ]; then
-				defaults write "$settings_plist" resendLastBoot -bool true
-				chmod 644 "$settings_plist"
-			fi
-			exit 2
-		fi
-
-		# all good if we got this far - report ok.
-		echo "Last Reboot [$lastBoot] OK"
-		exit 0
 	else
 		# 10.11 or earlier...
 
@@ -132,14 +172,26 @@ if [ "$lastCheckSec" -lt "$lastBootSec" ]; then
 						restartReason=`echo "$line" | awk -F'cause: ' '{print $NF}'`
 						restartTime=`echo "$line" | awk '{print $1,$2,$3}'`
 
-						# log any result other than 5 - set badReboot variable
-						if [ "$restartReason" -ne "5" ]; then
+						# log any result other than $shutdownCauseOK - set badReboot variable
+						if ! containsElement "$restartReason" "${shutdownCauseOK[@]}"; then
 							if [ "$firstLine" -eq "0" ]; then
 								echo -e "Abnormal restart detected:\n"
 								firstLine=1
 							fi
 							echo -e "[$restartTime] Shutdown cause $restartReason"
-							badReboot=1
+							for index in "${shutdownCauseDescription[@]}" ; do
+							  KEY="${index%%::*}"
+							  VALUE="${index##*::}"
+							  if [ "$KEY" == "$restartReason" ]; then
+							    echo -e "-- $VALUE"
+							    break
+							  fi
+							done
+							if containsElement "$restartReason" "${shutdownCauseWarn[@]}"; then
+								warnReboot=1
+							else
+								badReboot=1
+							fi
 						fi
 					fi
 				fi
@@ -173,14 +225,18 @@ if [ "$lastCheckSec" -lt "$lastBootSec" ]; then
 					restartReason=`echo "$line" | awk -F'cause: ' '{print $NF}'`
 					restartTime=`echo "$line" | awk '{print $1,$2,$3}'`
 
-					# log any result other than 5 - set badReboot variable
-					if [ "$restartReason" -ne "5" ]; then
+					# log any result other than $shutdownCauseOK - set badReboot variable
+					if ! containsElement "$restartReason" "${shutdownCauseOK[@]}"; then
 						if [ "$firstLine" -eq "0" ]; then
 							echo -e "Abnormal restart detected:\n"
 							firstLine=1
 						fi
 						echo -e "[$restartTime] Shutdown cause $restartReason"
-						badReboot=1
+						if containsElement "$restartReason" "${shutdownCauseWarn[@]}"; then
+							warnReboot=1
+						else
+							badReboot=1
+						fi
 					fi
 				fi
 
@@ -188,21 +244,26 @@ if [ "$lastCheckSec" -lt "$lastBootSec" ]; then
 			# skip lines that are newer than we want
 			if (( $L_DATE >  $lastBootCheckEnd )) ; then break ; fi
 		done < /var/log/system.log
-
-		# check if we identified a bad reboot - if so exit with error.
-		if [ "$badReboot" -ne "0" ]; then
-			# we had a bad reboot detected - lets see if it was the last occurrence. if it was not, set us to resubmit last reboot status on next run (will clear error)
-			if [ "$restartReason" -eq "5" ]; then
-				defaults write "$settings_plist" resendLastBoot -bool true
-				chmod 644 "$settings_plist"
-			fi
-			exit 2
-		fi
-
-		# all good if we got this far - report ok.
-		echo "Last Reboot [$lastBoot] OK"
-		exit 0
 	fi
+
+	# check if we identified a bad reboot and exit appropriately
+	if [ "$badReboot" -ne "0" ] || [ "$warnReboot" -ne "0" ]; then
+		# we had a bad reboot detected - lets see if it was the last occurrence. if it was not, set us to resubmit last reboot status on next run (will clear error)
+		if containsElement "$restartReason" "${shutdownCauseOK[@]}" ; then
+			defaults write "$settings_plist" resendLastBoot -bool true
+			chmod 644 "$settings_plist"
+		fi
+		# alert if bad reboot, otherwise just warn
+		if [ "$badReboot" -ne "0" ]; then
+			exit 2
+		else
+			exit 20
+		fi
+	fi
+
+	# all good if we got this far - report ok.
+	echo "Last Reboot [$lastBoot] OK"
+	exit 0
 else
 	# we have not rebooted since last check - increment the last check time to now
 	defaults write "$settings_plist" lastCheck -date "$thisCheck +0000"
