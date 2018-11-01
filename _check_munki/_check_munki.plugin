@@ -3,20 +3,15 @@
 # PLUGIN:  Munki Status
 # AUTHOR:  Stephen Boyle @sphen13
 # DATE:    2018-09-19
-# VERSION: 1.0
+# VERSION: 1.1
 
 # 2018-09-19	v1.0
-# 2018-10-31	v1.1
+# 2018-11-01	v1.1
 #							- Change alertting frequency. wait until 3 consective errors to trigger (other than pending updates past due)
 #							- Nudge user after daysBeforeAlert
+#							- Add Apple Updates to the list of pendingInstalls
 
-# yo:
-	# /Applications/Utilities/yo.app/Contents/MacOS/yo -z Tink -t "Software Updates Available" -n "Updates have been due for X days, Please Update Now" -b "Update Now" -o "Later" -a munki://updates
-
-# 	defaults write "$settings_plist" lastCheck -date "$thisCheck +0000"
-# thisCheck=`date "+%Y-%m-%d %H:%M:%S"`
-# 	lastCheck=`defaults read "$settings_plist" lastCheck | awk '{print $1,$2}'`
-
+# munkiPrefs -> PendingUpdateCount
 
 
 # set defaults
@@ -86,6 +81,19 @@ if [ -e "$munkiPrefs" ] && [ -e "$munkiReport" ]; then
 	while true ; do
 		#IFS=$'\n'
 		item=`$PlistBuddy "Print :ItemsToInstall:$i:display_name" "${munkiReport}" 2>/dev/null`
+		if [[ ${item} ]]; then
+			pendingInstalls+=("${item}")
+		else
+			break
+		fi
+		i=$(($i + 1))
+	done
+
+	# apple updates to be installed
+	i=0
+	while true ; do
+		#IFS=$'\n'
+		item=`$PlistBuddy "Print :AppleUpdates:$i:display_name" "${munkiReport}" 2>/dev/null`
 		if [[ ${item} ]]; then
 			pendingInstalls+=("${item}")
 		else

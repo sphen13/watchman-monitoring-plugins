@@ -56,7 +56,7 @@ lastCheckSec=`date -j -f "%Y-%m-%d %H:%M:%S" "$lastCheck" "+%s"`
 
 if [ "$lastCheckSec" -lt "$lastBootSec" ]; then
 	# we have had a reboot since last time we checked
-	
+
 	# increment the last check time to now
 	defaults write "$settings_plist" lastCheck -date "$thisCheck +0000"
 	chmod 644 "$settings_plist"
@@ -64,12 +64,12 @@ if [ "$lastCheckSec" -lt "$lastBootSec" ]; then
 	if [ "$currentOS" -ge "12" ]; then
 		# set the end date of our log scan to + 5 minutes
 		lastBootCheckEnd=`date -j -v +5M -f "%Y-%m-%d %H:%M:%S" "$lastBoot" "+%Y-%m-%d %H:%M:%S"`
-		
+
 		# loop over log entries between the last successful check and lastBootCheckEnd
 		while read -r line ; do
 			restartReason=`echo "$line" | awk -F')' '{print $NF}' | awk '{print $4}'`
 			restartTime=`echo "$line" | awk '{print $1,$2}' | cut -d"." -f1`
-			
+
 			# log any result other than 5 - set badReboot variable
 			if [ "$restartReason" -ne "5" ]; then
 				if [ "$firstLine" -eq "0" ]; then
@@ -80,7 +80,7 @@ if [ "$lastCheckSec" -lt "$lastBootSec" ]; then
 				badReboot=1
 			fi
 		done < <(log show --style syslog --predicate 'senderImagePath contains[cd] "AppleSMC"' --start "$lastCheck" --end "$lastBootCheckEnd" | egrep shutdown\ cause)
-				
+
 		# check if we identified a bad reboot - if so exit with error.
 		if [ "$badReboot" -ne "0" ]; then
 			# we had a bad reboot detected - lets see if it was the last occurrence. if it was not, set us to resubmit last reboot status on next run (will clear error)
@@ -90,17 +90,17 @@ if [ "$lastCheckSec" -lt "$lastBootSec" ]; then
 			fi
 			exit 2
 		fi
-		
+
 		# all good if we got this far - report ok.
 		echo "Last Reboot [$lastBoot] OK"
 		exit 0
 	else
 		# 10.11 or earlier...
-		
+
 		# touch a file with the last time we checked - and use -newer
 		lastCheckTouch=`date -j -f "%Y-%m-%d %H:%M:%S" "$lastCheck" "+%y%m%d%H%M.%S"`
 		touch -t "$lastCheckTouch" /tmp/.check_shutdown_cause
-		
+
 		# set the end date of our log scan to + 5 minutes
 		let lastBootCheckEnd=lastBootSec+300
 
@@ -109,7 +109,7 @@ if [ "$lastCheckSec" -lt "$lastBootSec" ]; then
 		# loop over gz first
 		while read -r logFile ; do
 			# check each log in reverse order...
-			echo $logFile																									### DEBUG	
+			echo $logFile																									### DEBUG
 			while read -r line ; do
 				# continue looping if the line is empty or continued from last line...
 				if [ "$line" == "" ] ; then continue ; fi
@@ -117,7 +117,7 @@ if [ "$lastCheckSec" -lt "$lastBootSec" ]; then
 				if [ -z "$L_DATE" ] ; then continue ; fi
 				L_DATE=`date -j -f "%b %d %T" "$L_DATE" +%s 2>/dev/null`
 				if [ -z "$L_DATE" ] ; then continue ; fi
-				
+
 				# skip lines that are before we want
 				if (( $lastCheckSec > $L_DATE  )) ; then continue ; fi
 				# bingo - lets check for a cause...
@@ -125,13 +125,13 @@ if [ "$lastCheckSec" -lt "$lastBootSec" ]; then
 					echo "checking line..."																					### DEBUG
 					# check if it has Shutdown
 					line=`echo "$line" | grep "shutdown cause"`
-					
+
 					if [ ! -z "$line" ]; then
 						echo "$line"																						### DEBUG
-						
+
 						restartReason=`echo "$line" | awk -F'cause: ' '{print $NF}'`
 						restartTime=`echo "$line" | awk '{print $1,$2,$3}'`
-					
+
 						# log any result other than 5 - set badReboot variable
 						if [ "$restartReason" -ne "5" ]; then
 							if [ "$firstLine" -eq "0" ]; then
@@ -158,21 +158,21 @@ if [ "$lastCheckSec" -lt "$lastBootSec" ]; then
 			if [ -z "$L_DATE" ] ; then continue ; fi
 			L_DATE=`date -j -f "%b %d %T" "$L_DATE" +%s 2>/dev/null`
 			if [ -z "$L_DATE" ] ; then continue ; fi
-		
+
 			# skip lines that are before we want
 			if (( $lastCheckSec > $L_DATE  )) ; then continue ; fi
 			# bingo - lets check for a cause...
 			if (( $L_DATE <= $lastBootCheckEnd )) ; then
-		
+
 				# check if it has Shutdown
 				line=`echo "$line" | grep "shutdown cause"`
-				
+
 				if [ ! -z "$line" ]; then
 					echo "$line"																							### DEBUG
-					
+
 					restartReason=`echo "$line" | awk -F'cause: ' '{print $NF}'`
 					restartTime=`echo "$line" | awk '{print $1,$2,$3}'`
-				
+
 					# log any result other than 5 - set badReboot variable
 					if [ "$restartReason" -ne "5" ]; then
 						if [ "$firstLine" -eq "0" ]; then
@@ -188,7 +188,7 @@ if [ "$lastCheckSec" -lt "$lastBootSec" ]; then
 			# skip lines that are newer than we want
 			if (( $L_DATE >  $lastBootCheckEnd )) ; then break ; fi
 		done < /var/log/system.log
-		
+
 		# check if we identified a bad reboot - if so exit with error.
 		if [ "$badReboot" -ne "0" ]; then
 			# we had a bad reboot detected - lets see if it was the last occurrence. if it was not, set us to resubmit last reboot status on next run (will clear error)
@@ -198,7 +198,7 @@ if [ "$lastCheckSec" -lt "$lastBootSec" ]; then
 			fi
 			exit 2
 		fi
-		
+
 		# all good if we got this far - report ok.
 		echo "Last Reboot [$lastBoot] OK"
 		exit 0
