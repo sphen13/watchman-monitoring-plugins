@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>PluginName</key>
+	<string>Third Vantage B2 Check</string>
+	<key>PluginVersion</key>
+	<string>1.1</string>
+	<key>PluginOptions</key>
+	<array>
+		<dict>
+			<key>SettingStorageKey</key>
+			<string>.</string>
+			<key>SettingStoragePath</key>
+			<string>/Library/MonitoringClient/PluginSupport/_check_third_vantage_b2.plist</string>
+			<key>SettingTitle</key>
+			<string>Maintains the Third Vantage Software Center settings</string>
+			<key>SettingTitleHint</key>
+			<string></string>
+			<key>SettingType</key>
+			<dict>
+				<key>Type</key>
+				<string>DisplayOnly</string>
+				<key>Value</key>
+				<string></string>
+			</dict>
+		</dict>
+	</array>
+	<key>PluginUUID</key>
+	<string>ebd25e7d-c3ee-45fb-871b-80d0bb4177bf</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>_check_third_vantage_b2.plugin</string>
+	</array>
+</dict>
+</plist>
