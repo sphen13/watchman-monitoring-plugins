@@ -1,0 +1,212 @@
+#!/bin/bash
+
+# PLUGIN:  Munki Status
+# AUTHOR:  Stephen Boyle @sphen13
+# DATE:    2018-09-19
+# VERSION: 1.1
+
+# 2018-09-19	v1.0
+# 2018-11-01	v1.1
+#							- Change alertting frequency. wait until 3 consective errors to trigger (other than pending updates past due)
+#							- Nudge user after daysBeforeAlert
+#							- Add Apple Updates to the list of pendingInstalls
+
+# munkiPrefs -> PendingUpdateCount
+
+
+# set defaults
+pluginName="_check_munki"
+daysBeforeAlert=7
+daysBeforeCritical=14
+consecutiveErrorsBeforeAlert=3
+
+settings_plist="/Library/MonitoringClient/PluginSupport/"$pluginName"_settings.plist"
+clientSettings="/Library/MonitoringClient/ClientSettings.plist"
+munkiPrefs="/Library/Preferences/ManagedInstalls.plist"
+munkiReport="/Library/Managed Installs/ManagedInstallReport.plist"
+PlistBuddy="/usr/libexec/PlistBuddy -c"
+notificationAgent="/Applications/Utilities/yo.app/Contents/MacOS/yo"
+notificationTitle="Software Updates Available"
+
+yesterday=$(date -v -1d '+%m-%d-%y')
+today=$(date '+%m-%d-%y')
+
+# read settings and create if needed.
+if [ ! -f $settings_plist ]; then
+	# populate plist with defaults
+	defaults write "$settings_plist" daysBeforeAlert $daysBeforeAlert
+	defaults write "$settings_plist" PrefPaneVisibility -bool true
+	defaults write "$settings_plist" Initially_Disabled -bool false
+	chmod 644 "$settings_plist"
+
+	exit 25
+else
+	# plist exists - lets check for each value
+	isset=`defaults read "$settings_plist" daysBeforeAlert 2>/dev/null`
+	if [ -z "$isset" ]; then
+		defaults write "$settings_plist" daysBeforeAlert $daysBeforeAlert
+		chmod 644 "$settings_plist"
+	fi
+fi
+
+# read in our settings
+daysBeforeAlert=`defaults read "$settings_plist" daysBeforeAlert 2>/dev/null`
+consecutiveErrors=`defaults read "$settings_plist" consecutiveErrors 2>/dev/null`
+if [[ -z $consecutiveErrors ]]; then
+	# set consecutiveErrors to zero if its unset
+	consecutiveErrors=0
+fi
+lastUserNotification=`defaults read "$settings_plist" userNotifiedDate 2>/dev/null | awk '{print $1}' 2>/dev/null`
+thisCheck=`date "+%Y-%m-%d %H:%M:%S"`
+today=`date +%Y-%m-%d`
+if [[ "$lastUserNotification" == "$today" ]]; then
+	userNotifiedToday=1
+fi
+
+# lets do some stuff
+if [ -e "$munkiPrefs" ] && [ -e "$munkiReport" ]; then
+	# read how many days we have had pending updates
+	oldestUpdateDays=`defaults read "${munkiPrefs}" OldestUpdateDays 2>/dev/null`
+	oldestUpdateDays=`echo "$oldestUpdateDays/1" | bc`
+
+	# read warnings
+	warnings=`$PlistBuddy "Print :Warnings:" "${munkiReport}" 2>/dev/null | sed -e 1d -e '$d' | sort | uniq`
+
+	# read errors:
+	errors=`$PlistBuddy "Print :Errors:" "${munkiReport}" 2>/dev/null | sed -e 1d -e '$d' | sort | uniq`
+
+	# items to be installed
+	pendingInstalls=()
+	i=0
+	while true ; do
+		#IFS=$'\n'
+		item=`$PlistBuddy "Print :ItemsToInstall:$i:display_name" "${munkiReport}" 2>/dev/null`
+		if [[ ${item} ]]; then
+			pendingInstalls+=("${item}")
+		else
+			break
+		fi
+		i=$(($i + 1))
+	done
+
+	# apple updates to be installed
+	i=0
+	while true ; do
+		#IFS=$'\n'
+		item=`$PlistBuddy "Print :AppleUpdates:$i:display_name" "${munkiReport}" 2>/dev/null`
+		if [[ ${item} ]]; then
+			pendingInstalls+=("${item}")
+		else
+			break
+		fi
+		i=$(($i + 1))
+	done
+
+	# problem installs
+	#problemInstalls=`$PlistBuddy "Print :ProblemInstalls:" "${munkiReport}" 2>/dev/null | sed -e 1d -e '$d'`
+
+	# process for alerts
+	if [[ "$oldestUpdateDays" -ge "$daysBeforeAlert" ]]; then
+		# lets notify that there have been pending updates for too long
+		exitStatus=2
+		printf "There have been pending munki updates for $oldestUpdateDays days.\n"
+
+		# lets bug the user
+		if [[ ! $userNotifiedToday ]] && [ -e "$notificationAgent" ]; then
+			# we have not notified them yet - lets do it!
+			if [[ "$oldestUpdateDays" -ge "$daysBeforeCritical" ]]; then
+				notificationTitle="Critical Updates Available"
+			fi
+			consoleUser=$(/usr/bin/python -c 'from SystemConfiguration import SCDynamicStoreCopyConsoleUser; import sys; username = (SCDynamicStoreCopyConsoleUser(None, None, None) or [None])[0]; username = [username,""][username in [u"loginwindow", None, u""]]; sys.stdout.write(username + "\n");')
+			consoleUserUID=$(/usr/bin/id -u "${consoleUser}")
+			launchctl asuser "$consoleUserUID" "$notificationAgent" -z Tink -t "$notificationTitle" -n "Updates have been due for $oldestUpdateDays days, Please Update Now" -b "Update Now" -o "Later" -a munki://updates > /dev/null 2>&1
+			echo ">>> Sending notification to user <<<"
+
+			# update our prefs
+			defaults write "$settings_plist" userNotifiedDate -date "$thisCheck +0000"
+		fi
+		echo ""
+	fi
+
+	if [[ ${errors} ]]; then
+		# populate $temp with errors we want to not alert on
+		temp=$(echo "${errors}" | grep "Unexpected error in updatecheck:")
+		temp+=$(echo "${errors}" | grep "The request timed out")
+		temp+=$(echo "${errors}" | grep "The network connection was lost")
+		temp+=$(echo "${errors}" | grep "softwareupdate error: 100")
+		temp+=$(echo "${errors}" | grep "Could not download all available Apple updates")
+		temp+=$(echo "${errors}" | grep "Unexpected error in munkilib.installer")
+		temp+=$(echo "${errors}" | grep "The request timed out")
+		if [[ -z ${temp} ]]; then
+			consecutiveErrors=$((consecutiveErrors+1))
+			errorThisTime=1
+			if [[ "$consecutiveErrors" -ge "$consecutiveErrorsBeforeAlert" ]]; then
+				# lets notify that there are errors
+				exitStatus=2
+			fi
+		fi
+		# lets only warn if we dont have enough consecutiveErrors
+		if [[ -z ${exitStatus} ]]; then exitStatus=20; fi
+		printf '### Munki Errors:\n%s\n\n' "${errors}"
+	fi
+
+	if [[ ${problemInstalls} ]]; then
+		if [[ -z ${errorThisTime} ]]; then
+			errorThisTime=1
+			consecutiveErrors=$((consecutiveErrors+1))
+		fi
+		if [[ "$consecutiveErrors" -ge "$consecutiveErrorsBeforeAlert" ]]; then
+			# lets notify that there are errors
+			exitStatus=2
+		fi
+		# lets only warn if we dont have enough consecutiveErrors
+		if [[ -z ${exitStatus} ]]; then exitStatus=20; fi
+		printf '### Munki has problematic installs:\n%s\n\n' "${problemInstalls}"
+	fi
+
+	if [[ ${warnings} ]]; then
+		# lets notify that there are warnings. set exitStatus if its not previously set
+		# populate $temp with errors we want to not alert on
+		temp=$(echo "${warnings}" | grep "The Internet connection appears to be offline")
+		if [[ ${temp} ]]; then
+			# lets ignore alerts this time around even if we set exitStatus already
+			# set variable to we know not to change the consecutiveError count
+			dontChangeErrorCount=1
+			exitStatus=20
+		fi
+
+		if [[ -z ${exitStatus} ]]; then exitStatus=20; fi
+
+		# only report warnings if ther are no errors:
+		if [[ "${exitStatus}" -ne "2" ]]; then printf '### Munki Warnings:\n%s\n\n' "${warnings}"; fi
+	fi
+
+	if [[ ${pendingInstalls[@]} ]]; then
+		# lets notify that there are warnings. set exitStatus if its not previously set
+		### can we see pending sus installs too??
+		if [[ -z ${exitStatus} ]]; then exitStatus=0; fi
+		echo "### Pending Munki Installs: (~$oldestUpdateDays days)"
+		printf '    %s\n' "${pendingInstalls[@]}"
+		printf '\n'
+	fi
+
+	# reset consecutiveErrors if we had no error this time
+	if [[ -z ${errorThisTime} ]] && [[ -z ${dontChangeErrorCount} ]]; then
+		consecutiveErrors=0
+	else
+		# notify regarding consecutiveError count
+		echo "### Consecutive Errors: $consecutiveErrors"
+	fi
+	# write our prefs
+	consecutiveErrors=`defaults write "$settings_plist" consecutiveErrors -int "$consecutiveErrors"`
+
+	# if we havent hit an exit status assume all is good
+	if [[ -z ${exitStatus} ]]; then
+		exitStatus=0
+		echo 'Munki is functioning well.'
+	fi
+	exit $exitStatus
+fi
+
+# munki is not there...
+exit 25
