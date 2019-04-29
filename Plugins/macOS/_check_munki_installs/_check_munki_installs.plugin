@@ -1,0 +1,62 @@
+#!/usr/bin/python
+
+# PLUGIN:  Munki Installs
+# AUTHOR:  Stephen Boyle @sphen13
+# DATE:    2019-04-29
+# VERSION: 1.0
+
+# 2019-04-29	v1.0
+#				- initial version
+
+import os
+import sys
+import datetime
+from PluginToolkit import writePlist
+from PluginToolkit import check_settings
+
+# read preferences
+settings_plist = '/Library/MonitoringClient/PluginSupport/_check_munki_installs.plist'
+base_settings = {
+    'PrefPaneVisibility' : True,
+}
+settings = check_settings(base_settings, settings_plist)
+writePlist(settings, settings_plist)
+
+# do actual work
+start = datetime.datetime.now() - datetime.timedelta(days=30)
+end = datetime.datetime.now()
+
+munkiInstalls = '/Library/Managed Installs/Logs/Install.log'
+updates = []
+appleUpdates = []
+
+exists = os.path.isfile(munkiInstalls)
+if exists:
+    with open(munkiInstalls, 'r') as f:
+        for line in f:
+            ts=datetime.datetime.strptime(line[:20],'%b %d %Y %H:%M:%S')
+            if ts>start and ts<end:
+                if 'SUCCESSFUL' in line and 'Removal' not in line:
+                    if 'Apple Software Update' in line:
+                        currentUpdate=line[60:].split(':')[0]
+                        if currentUpdate not in appleUpdates:
+                            appleUpdates.append(currentUpdate)
+                    else:
+                        currentUpdate=line[38:].split(':')[0]
+                        if currentUpdate not in updates:
+                            updates.append(currentUpdate)
+
+    updatesCount = len(updates)
+    appleUpdatesCount = len(appleUpdates)
+
+    print '%d Updates Installed in the last 30 days:\n' % (updatesCount+appleUpdatesCount)
+    print '%d Software Update(s):' % updatesCount
+    print(( '    {}\n' * len(updates)).format(*updates))
+    print '%d System Software Update(s):' % appleUpdatesCount
+    print(( '    {}\n' * len(appleUpdates)).format(*appleUpdates))
+
+    # we have info to report - do it
+    sys.exit(0)
+
+# if we got this far lets not report anything
+sys.exit(25)
