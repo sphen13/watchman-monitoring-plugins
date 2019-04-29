@@ -16,7 +16,7 @@
 # 2018-11-06: v1.3.1
 #               fix output for new time drift
 # 2019-04-29: v1.4
-#               kick version
+#               exit with informational status on initial ntp reset attempt
 
 # set defaults
 pluginName="_check_timedrift"
@@ -139,8 +139,8 @@ if [ ! -z "$weAreOnline" ]; then
 					defaults write "$settings_plist" ntpReloaded -bool true
 					chmod 644 "$settings_plist"
 
-					# exit with code which will generate an alert/ticket regardless of anything else...
-					exit 200
+					# exit with code which will generate an informational alert...
+					exit 20
 				fi
 			else
 				# notify
