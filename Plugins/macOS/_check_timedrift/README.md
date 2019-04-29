@@ -33,4 +33,6 @@ Checks current time against **NTP reference server** time polled via `ntpdate` o
 #               enable time sync checks and update on 10.14
 # 2018-11-06: v1.3.1
 #               fix output for new time drift
+# 2019-04-29: v1.4
+#               kick version
 ```
