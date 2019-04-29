@@ -2,14 +2,17 @@
 
 # PLUGIN: 	Check Shutdown Cause
 # AUTHOR: 	Stephen Boyle @sphen13
-# DATE:   	2017-02-26
-# VERSION:	0.3
+# DATE:   	2019-04-29
+# VERSION:	0.4
 
 # 2017-02-26	v0.1-0.2
 # 2018-10-30	v0.3
 #								add shutdown cause description
 #								add logic to prevent certain shutdown cause alerts
 #								add logic to only warn on certain shutdown causes
+# 2019-04-29	v0.4
+#								add more shutdown causes
+#								exclude more causes from alert reporting (just info)
 
 # read prefpane settings & set defaults
 settings_plist='/Library/MonitoringClient/PluginSupport/_check_shutdown_cause_settings.plist'
@@ -17,32 +20,43 @@ settings_plist='/Library/MonitoringClient/PluginSupport/_check_shutdown_cause_se
 # define shutdown causes - from https://georgegarside.com/blog/macos/shutdown-causes/
 shutdownCauseDescription=(
 	'5::Correct Shut Down.'
-	'3::Hard shutdown.'
+	'3::Power Switch Initiated.'
+	'2::Low Battery'
+	'1::Temperature Over Limit'
 	'0::Power disconnected.'
+	'-1::Health Check.'
+	'-2::Power Supply Issue.'
 	'-3::Multiple temperature sensors exceeded the defined limit.'
-	'-60::Bad master directory block (badMDBErr).'
+	'-20::Kernel Hang.'
+	'-30::Temperature Over Limit.'
+	'-40::PSWRSMRST.'
+	'-60::Low Battery or Bad master directory block (badMDBErr).'
 	'-61::Watchdog timer detected unresponsive application, shutting down the system.'
 	'-62::Watchdog timer detected unresponsive application, restarting the system.'
-	'-65::unknown'
+	'-70::Palm Rest temperature exceeds limits.'
 	'-71::SO-DIMM Memory temperature exceeds limits.'
+	'-72::Heatpipe temperature exceeds limits.'
 	'-74::Battery temperature exceeds limits.'
 	'-75::Communication issue with AC adapter.'
+	'-76::Temperature Manual.'
 	'-78::Incorrect current value coming from AC adapter.'
 	'-79::Incorrect current value coming from battery.'
-	'-86::Proximity temperature exceeds limits.'
+	'-82::Temperature Skin.'
+	'-83::Temperature Skin.'
+	'-84::Temperature Backup.'
+	'-86::CPU Proximity temperature exceeds limits.'
 	'-95::CPU temperature exceeds limits.'
 	'-100::Power supply temperature exceeds limits.'
+	'-101::LCD temperature exceeds limits.'
+	'-102::RSM Power Fail.'
 	'-103::Battery cell under voltage detected.'
-	'-104::unknown'
-	'-108::unverified'
-	'-112::unverified'
 	'-127::PMU forced shutdown.'
 	'-128::unknown'
 )
 # set the shutdown causes we do not want to report
 shutdownCauseOK=('5')
 # set the shutdown causes we only want to warn on
-shutdownCauseWarn=('3' '0')
+shutdownCauseWarn=('3' '2' '0' '-1' '-60' '-128')
 
 currentOS=`sw_vers -productVersion | cut -d'.' -f2`
 lastBoot=`sysctl kern.boottime | cut -d"}" -f2 | awk '{print $1,$2,$3,$4,$5}'`
