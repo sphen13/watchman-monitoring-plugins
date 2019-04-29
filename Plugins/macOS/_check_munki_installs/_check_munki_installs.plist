@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>PluginName</key>
+    <string>Managed Installs</string>
+    <key>PluginUUID</key>
+    <string>72461E25-6EDE-4E31-B284-FBAED43DD9A0</string>
+    <key>PluginVersion</key>
+    <string>1.0</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Library/MonitoringClient/Plugins/_check_munki_installs.plugin</string>
+    </array>
+</dict>
+</plist>
