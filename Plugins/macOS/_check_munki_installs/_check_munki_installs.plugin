@@ -49,11 +49,13 @@ if exists:
     updatesCount = len(updates)
     appleUpdatesCount = len(appleUpdates)
 
-    print '%d Updates Installed in the last 30 days:\n' % (updatesCount+appleUpdatesCount)
-    print '%d Software Update(s):' % updatesCount
-    print(( '    {}\n' * len(updates)).format(*updates))
-    print '%d System Software Update(s):' % appleUpdatesCount
-    print(( '    {}\n' * len(appleUpdates)).format(*appleUpdates))
+    print '%d Updates Installed in the last 30 days\n' % (updatesCount+appleUpdatesCount)
+    if updates:
+        print '%d Software Update(s):' % updatesCount
+        print(( '- {}\n' * len(updates)).format(*updates))
+    if appleUpdates:
+        print '%d System Software Update(s):' % appleUpdatesCount
+        print(( '- {}\n' * len(appleUpdates)).format(*appleUpdates))
 
     # we have info to report - do it
     sys.exit(0)
