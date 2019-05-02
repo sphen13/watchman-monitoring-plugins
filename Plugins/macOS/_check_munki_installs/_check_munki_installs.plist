@@ -8,6 +8,43 @@
     <string>72461E25-6EDE-4E31-B284-FBAED43DD9A0</string>
     <key>PluginVersion</key>
     <string>1.0</string>
+    <key>PluginOptions</key>
+    <array>
+      <dict>
+        <key>SettingStorageKey</key>
+        <string>.</string>
+        <key>SettingStoragePath</key>
+        <string>/Library/MonitoringClient/PluginSupport/_check_munki_installs.plist</string>
+        <key>SettingTitle</key>
+        <string>Report the last 30 days of munki installs</string>
+        <key>SettingTitleHint</key>
+        <string></string>
+        <key>SettingType</key>
+        <dict>
+          <key>Type</key>
+          <string>DisplayOnly</string>
+          <key>Value</key>
+          <string></string>
+        </dict>
+      </dict>
+      <dict>
+        <key>SettingStorageKey</key>
+        <string>ignoreInstalls</string>
+        <key>SettingStoragePath</key>
+        <string>/Library/MonitoringClient/PluginSupport/_check_munki_installs.plist</string>
+        <key>SettingTitle</key>
+        <string>Ignore installs that match...</string>
+        <key>SettingTitleHint</key>
+        <string>Provide a comma delimited string below for strings we will look for and exclude from the installation report</string>
+        <key>SettingType</key>
+        <dict>
+          <key>Type</key>
+          <string>TextField</string>
+          <key>Value</key>
+          <string></string>
+        </dict>
+      </dict>
+    </array>
     <key>ProgramArguments</key>
     <array>
         <string>/Library/MonitoringClient/Plugins/_check_munki_installs.plugin</string>
