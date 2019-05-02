@@ -17,10 +17,18 @@ from PluginToolkit import check_settings
 # read preferences
 settings_plist = '/Library/MonitoringClient/PluginSupport/_check_munki_installs.plist'
 base_settings = {
+    'ignoreInstalls' : '',
     'PrefPaneVisibility' : True,
 }
 settings = check_settings(base_settings, settings_plist)
 writePlist(settings, settings_plist)
+
+ignoreList = []
+if settings['ignoreInstalls']:
+    # split up the comma delimited strings
+    ignoreList = [x.strip() for x in settings['ignoreInstalls'].split(",")]
+
+print(ignoreList)
 
 # do actual work
 start = datetime.datetime.now() - datetime.timedelta(days=30)
@@ -39,11 +47,11 @@ if exists:
                 if 'SUCCESSFUL' in line and 'Removal' not in line:
                     if 'Apple Software Update' in line:
                         currentUpdate=line[60:].split(':')[0]
-                        if currentUpdate not in appleUpdates:
+                        if currentUpdate not in appleUpdates and not any(s in currentUpdate for s in ignoreList):
                             appleUpdates.append(currentUpdate)
                     else:
                         currentUpdate=line[38:].split(':')[0]
-                        if currentUpdate not in updates:
+                        if currentUpdate not in updates and not any(s in currentUpdate for s in ignoreList):
                             updates.append(currentUpdate)
 
     updatesCount = len(updates)
