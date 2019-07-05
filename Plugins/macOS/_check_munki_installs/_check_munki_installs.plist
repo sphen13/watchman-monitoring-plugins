@@ -14,7 +14,7 @@
         <key>SettingStorageKey</key>
         <string>.</string>
         <key>SettingStoragePath</key>
-        <string>/Library/MonitoringClient/PluginSupport/_check_munki_installs.plist</string>
+        <string>/Library/MonitoringClient/PluginSupport/_check_munki_installs_settings.plist</string>
         <key>SettingTitle</key>
         <string>Report the last 30 days of munki installs</string>
         <key>SettingTitleHint</key>
@@ -31,7 +31,7 @@
         <key>SettingStorageKey</key>
         <string>ignoreInstalls</string>
         <key>SettingStoragePath</key>
-        <string>/Library/MonitoringClient/PluginSupport/_check_munki_installs.plist</string>
+        <string>/Library/MonitoringClient/PluginSupport/_check_munki_installs_settings.plist</string>
         <key>SettingTitle</key>
         <string>Ignore installs that match...</string>
         <key>SettingTitleHint</key>
