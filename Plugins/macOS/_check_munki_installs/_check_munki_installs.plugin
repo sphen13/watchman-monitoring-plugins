@@ -15,7 +15,7 @@ from PluginToolkit import writePlist
 from PluginToolkit import check_settings
 
 # read preferences
-settings_plist = '/Library/MonitoringClient/PluginSupport/_check_munki_installs.plist'
+settings_plist = '/Library/MonitoringClient/PluginSupport/_check_munki_installs_settings.plist'
 base_settings = {
     'ignoreInstalls' : '',
     'PrefPaneVisibility' : True,
