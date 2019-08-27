@@ -106,7 +106,7 @@ settings = check_settings(base_settings, settings_plist)
 networkServices = getNetworkServices()
 device = None
 networkDeviceInfo = None
-currentStatus = ''
+mediaInfo = None
 exitStatus = 25
 
 # populate default networkServiceToCheck value with our best guess
@@ -149,12 +149,12 @@ if device is None:
 # catch if interface is disabled or non-existant
 if device is False or device is None:
     if device is False:
-        currentStatus = 'Network service is Disabled'
+        print('Network service is Disabled')
         exitStatus = 2
     elif settings['networkServiceToCheck'] == '':
         sys.exit(25)
     else:
-        currentStatus = 'Network service is not found'
+        print('Network service is not found')
         exitStatus = 2
     device = ''
 
@@ -171,40 +171,34 @@ if 'does not exist' not in networkDeviceInfo and exitStatus == 25:
     mediaInfo = getDeviceMediaInfo(networkDeviceInfo)
 
     if 'status: active' not in networkDeviceInfo:
-        currentStatus = 'Network service device is not active'
+        print('Network service device is not active')
         exitStatus = 2
 
     if 'half' in mediaInfo:
-        currentStatus = 'Network service device is half duplex'
+        print('Network service device is half duplex')
         exitStatus = 2
 
     if exitStatus == 25:
         if '10g' in mediaInfo:
-            currentStatus = '10 Gig Link'
+            print('10 Gig Link')
             exitStatus = 0
         elif '1000' in mediaInfo and settings['networkServiceSpeed'] < 2:
-            currentStatus = 'Gigabit Link'
+            print('Gigabit Link')
             exitStatus = 0
         elif '100' in mediaInfo and settings['networkServiceSpeed'] < 1:
-            currentStatus = '100 Meg Link'
+            print('100 Meg Link')
             exitStatus = 0
         else:
-            currentStatus = 'Lower than desired network speed'
+            print('Lower than desired network speed')
             exitStatus = 2
 
 else:
     # network service exists but is not connected.
-    currentStatus = 'Network service device is not connected'
+    print('Network service device is not connected')
     exitStatus = 2
 
 # send report
 reporter = Reporter()
-reporter.add_metadata(
-    identifier           = 'interfaces_status',
-    name                 = 'Status',
-    datatype             = 'string',
-    value                = currentStatus
-)
 reporter.add_metadata(
     identifier           = 'interfaces_device',
     name                 = 'Device',
@@ -217,11 +211,12 @@ reporter.add_metadata(
     datatype             = 'string',
     value                = settings['networkServiceToCheck']
 )
-reporter.add_metadata(
-    identifier           = 'interfaces_mediaInfo',
-    name                 = 'Device Media Info',
-    datatype             = 'string',
-    value                = mediaInfo
-)
+if mediaInfo is not None:
+    reporter.add_metadata(
+        identifier           = 'interfaces_mediaInfo',
+        name                 = 'Device Media Info',
+        datatype             = 'string',
+        value                = mediaInfo
+    )
 
 sys.exit(exitStatus)
