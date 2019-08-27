@@ -3,17 +3,18 @@
 # PLUGIN:  Check Interfaces
 # AUTHOR:  Stephen Boyle @sphen13
 # DATE:    2019-08-28
-# VERSION: 0.1
+# VERSION: 0.2
 
 # 2019-08-28	v0.1
 #				- initial version
+# 2019-08-28    v0.2
+#               - metadata
 
 import os
 import sys
 import subprocess
 import re
-from PluginToolkit import writePlist
-from PluginToolkit import check_settings
+from PluginToolkit import *
 
 # ------------------------------------------------------------------------------
 # FUNCTIONS
@@ -105,6 +106,7 @@ settings = check_settings(base_settings, settings_plist)
 networkServices = getNetworkServices()
 device = None
 networkDeviceInfo = None
+currentStatus = ''
 exitStatus = 25
 
 # populate default networkServiceToCheck value with our best guess
@@ -147,17 +149,21 @@ if device is None:
 # catch if interface is disabled or non-existant
 if device is False or device is None:
     if device is False:
-        print('Network service is Disabled')
+        currentStatus = 'Network service is Disabled'
+        exitStatus = 2
     elif settings['networkServiceToCheck'] == '':
         sys.exit(25)
     else:
-        print('Network service is not found')
-    print('    ' + settings['networkServiceToCheck'])
-    sys.exit(2)
+        currentStatus = 'Network service is not found'
+        exitStatus = 2
+    device = ''
 
 # get device info if we havent already
 if networkDeviceInfo is None:
-    networkDeviceInfo = getDeviceInfo(device)
+    if device != '':
+        networkDeviceInfo = getDeviceInfo(device)
+    else:
+        networkDeviceInfo = ''
 
 # do our speed checks
 if 'does not exist' not in networkDeviceInfo and exitStatus == 25:
@@ -165,33 +171,57 @@ if 'does not exist' not in networkDeviceInfo and exitStatus == 25:
     mediaInfo = getDeviceMediaInfo(networkDeviceInfo)
 
     if 'status: active' not in networkDeviceInfo:
-        print('Network service device is not active')
+        currentStatus = 'Network service device is not active'
         exitStatus = 2
 
     if 'half' in mediaInfo:
-        print('Network service device is half duplex')
+        currentStatus = 'Network service device is half duplex'
         exitStatus = 2
 
     if exitStatus == 25:
         if '10g' in mediaInfo:
-            print('10 Gig Link')
+            currentStatus = '10 Gig Link'
             exitStatus = 0
         elif '1000' in mediaInfo and settings['networkServiceSpeed'] < 2:
-            print('Gigabit Link')
+            currentStatus = 'Gigabit Link'
             exitStatus = 0
         elif '100' in mediaInfo and settings['networkServiceSpeed'] < 1:
-            print('100 Meg Link')
+            currentStatus = '100 Meg Link'
             exitStatus = 0
         else:
-            print('Lower than desired network speed')
+            currentStatus = 'Lower than desired network speed'
             exitStatus = 2
 
-    print('    (' + device + ') ' + settings['networkServiceToCheck'])
-    print('    ' + mediaInfo)
 else:
     # network service exists but is not connected.
-    print('Network service device is not connected')
-    print('    ' + settings['networkServiceToCheck'])
+    currentStatus = 'Network service device is not connected'
     exitStatus = 2
+
+# send report
+reporter = Reporter()
+reporter.add_metadata(
+    identifier           = 'interfaces_status',
+    name                 = 'Status',
+    datatype             = 'string',
+    value                = currentStatus
+)
+reporter.add_metadata(
+    identifier           = 'interfaces_device',
+    name                 = 'Device',
+    datatype             = 'string',
+    value                = device
+)
+reporter.add_metadata(
+    identifier           = 'interfaces_networkService',
+    name                 = 'Network Service',
+    datatype             = 'string',
+    value                = settings['networkServiceToCheck']
+)
+reporter.add_metadata(
+    identifier           = 'interfaces_mediaInfo',
+    name                 = 'Device Media Info',
+    datatype             = 'string',
+    value                = mediaInfo
+)
 
 sys.exit(exitStatus)
