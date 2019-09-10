@@ -2,13 +2,15 @@
 
 # PLUGIN:  Check Interfaces
 # AUTHOR:  Stephen Boyle @sphen13
-# DATE:    2019-08-28
-# VERSION: 0.2
+# DATE:    2019-09-10
+# VERSION: 0.3
 
 # 2019-08-28	v0.1
 #				- initial version
 # 2019-08-28    v0.2
 #               - metadata
+# 2019-09-10    v0.3
+#               - auto exclude laptop by default
 
 import os
 import sys
@@ -66,6 +68,19 @@ def getDeviceInfo(device):
     return networkDeviceInfo
 
 
+def isLaptop():
+    # Get machine type
+    ifconfig = subprocess.Popen(['/usr/sbin/sysctl', 'hw.model'],
+               stdout=subprocess.PIPE,
+               stderr=subprocess.STDOUT)
+
+    machineType,stderr = ifconfig.communicate()
+    if 'Book' in machineType:
+        return True
+    else:
+        return False
+
+
 def networkServiceToDevice(networkServiceName, networkServices):
     # Find the device associated with it
     # - Return False if service is disabled
@@ -98,9 +113,22 @@ settings_plist = '/Library/MonitoringClient/PluginSupport/_check_interfaces_sett
 base_settings = {
     'networkServiceToCheck' : '',
     'networkServiceSpeed' : -1,
+	'Initially_Disabled' : '',
     'PrefPaneVisibility' : True,
 }
 settings = check_settings(base_settings, settings_plist)
+
+# Set plugin to be disabled on laptops by default
+if settings['Initially_Disabled'] == '':
+    if isLaptop():
+    	Log.write('Disabling plugin ...')
+    	reporter = Reporter()
+    	reporter.add_attribute( 'disable', '_check_interfaces.plugin' )
+    	settings['Initially_Disabled'] = True
+    	writePlist( settings, settings_plist )
+    	sys.exit(25)
+    else:
+    	settings['Initially_Disabled'] = False
 
 # Set up our internal variables
 networkServices = getNetworkServices()
