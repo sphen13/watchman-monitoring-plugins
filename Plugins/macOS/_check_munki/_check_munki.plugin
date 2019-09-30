@@ -10,6 +10,8 @@
 #							- Change alertting frequency. wait until 3 consective errors to trigger (other than pending updates past due)
 #							- Nudge user after daysBeforeAlert
 #							- Add Apple Updates to the list of pendingInstalls
+# 2019-09-30  v1.2
+#             - Add more variables to GUI/plist
 
 # munkiPrefs -> PendingUpdateCount
 
@@ -27,6 +29,7 @@ munkiReport="/Library/Managed Installs/ManagedInstallReport.plist"
 PlistBuddy="/usr/libexec/PlistBuddy -c"
 notificationAgent="/Applications/Utilities/yo.app/Contents/MacOS/yo"
 notificationTitle="Software Updates Available"
+notificationTitleCritical="Critical Updates Available"
 
 yesterday=$(date -v -1d '+%m-%d-%y')
 today=$(date '+%m-%d-%y')
@@ -34,7 +37,12 @@ today=$(date '+%m-%d-%y')
 # read settings and create if needed.
 if [ ! -f $settings_plist ]; then
 	# populate plist with defaults
-	defaults write "$settings_plist" daysBeforeAlert $daysBeforeAlert
+  defaults write "$settings_plist" daysBeforeAlert $daysBeforeAlert
+  defaults write "$settings_plist" daysBeforeCritical $daysBeforeCritical
+  defaults write "$settings_plist" consecutiveErrorsBeforeAlert $consecutiveErrorsBeforeAlert
+  defaults write "$settings_plist" notificationAgent "$notificationAgent"
+  defaults write "$settings_plist" notificationTitle "$notificationTitle"
+  defaults write "$settings_plist" notificationTitleCritical "$notificationTitleCritical"
 	defaults write "$settings_plist" PrefPaneVisibility -bool true
 	defaults write "$settings_plist" Initially_Disabled -bool false
 	chmod 644 "$settings_plist"
@@ -42,15 +50,45 @@ if [ ! -f $settings_plist ]; then
 	exit 25
 else
 	# plist exists - lets check for each value
-	isset=`defaults read "$settings_plist" daysBeforeAlert 2>/dev/null`
+  isset=`defaults read "$settings_plist" daysBeforeAlert 2>/dev/null`
 	if [ -z "$isset" ]; then
 		defaults write "$settings_plist" daysBeforeAlert $daysBeforeAlert
+		chmod 644 "$settings_plist"
+	fi
+  isset=`defaults read "$settings_plist" daysBeforeCritical 2>/dev/null`
+	if [ -z "$isset" ]; then
+		defaults write "$settings_plist" daysBeforeCritical $daysBeforeCritical
+		chmod 644 "$settings_plist"
+	fi
+  isset=`defaults read "$settings_plist" consecutiveErrorsBeforeAlert 2>/dev/null`
+	if [ -z "$isset" ]; then
+		defaults write "$settings_plist" consecutiveErrorsBeforeAlert $consecutiveErrorsBeforeAlert
+		chmod 644 "$settings_plist"
+	fi
+  isset=`defaults read "$settings_plist" notificationAgent 2>/dev/null`
+	if [ -z "$isset" ]; then
+		defaults write "$settings_plist" notificationAgent "$notificationAgent"
+		chmod 644 "$settings_plist"
+	fi
+  isset=`defaults read "$settings_plist" notificationTitle 2>/dev/null`
+	if [ -z "$isset" ]; then
+		defaults write "$settings_plist" notificationTitle "$notificationTitle"
+		chmod 644 "$settings_plist"
+	fi
+  isset=`defaults read "$settings_plist" notificationTitleCritical 2>/dev/null`
+	if [ -z "$isset" ]; then
+		defaults write "$settings_plist" notificationTitleCritical "$notificationTitleCritical"
 		chmod 644 "$settings_plist"
 	fi
 fi
 
 # read in our settings
 daysBeforeAlert=`defaults read "$settings_plist" daysBeforeAlert 2>/dev/null`
+daysBeforeCritical=`defaults read "$settings_plist" daysBeforeCritical 2>/dev/null`
+consecutiveErrorsBeforeAlert=`defaults read "$settings_plist" consecutiveErrorsBeforeAlert 2>/dev/null`
+notificationAgent=`defaults read "$settings_plist" notificationAgent 2>/dev/null`
+notificationTitle=`defaults read "$settings_plist" notificationTitle 2>/dev/null`
+notificationTitleCritical=`defaults read "$settings_plist" notificationTitleCritical 2>/dev/null`
 consecutiveErrors=`defaults read "$settings_plist" consecutiveErrors 2>/dev/null`
 if [[ -z $consecutiveErrors ]]; then
 	# set consecutiveErrors to zero if its unset
@@ -115,7 +153,7 @@ if [ -e "$munkiPrefs" ] && [ -e "$munkiReport" ]; then
 		if [[ ! $userNotifiedToday ]] && [ -e "$notificationAgent" ]; then
 			# we have not notified them yet - lets do it!
 			if [[ "$oldestUpdateDays" -ge "$daysBeforeCritical" ]]; then
-				notificationTitle="Critical Updates Available"
+				notificationTitle=$notificationTitleCritical
 			fi
 			consoleUser=$(/usr/bin/python -c 'from SystemConfiguration import SCDynamicStoreCopyConsoleUser; import sys; username = (SCDynamicStoreCopyConsoleUser(None, None, None) or [None])[0]; username = [username,""][username in [u"loginwindow", None, u""]]; sys.stdout.write(username + "\n");')
 			consoleUserUID=$(/usr/bin/id -u "${consoleUser}")

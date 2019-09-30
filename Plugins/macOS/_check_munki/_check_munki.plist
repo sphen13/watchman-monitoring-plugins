@@ -5,7 +5,7 @@
 	<key>PluginName</key>
 	<string>Munki Status</string>
 	<key>PluginVersion</key>
-	<string>1.1</string>
+	<string>1.2</string>
 	<key>PluginOptions</key>
 	<array>
 		<dict>
@@ -25,13 +25,13 @@
 				<string></string>
 			</dict>
 		</dict>
-		<dict>
+    <dict>
 			<key>SettingStorageKey</key>
 			<string>daysBeforeAlert</string>
 			<key>SettingStoragePath</key>
 			<string>/Library/MonitoringClient/PluginSupport/_check_munki_settings.plist</string>
 			<key>SettingTitle</key>
-			<string>Days Before Alert</string>
+			<string>Days before alert</string>
 			<key>SettingTitleHint</key>
 			<string></string>
 			<key>SettingType</key>
@@ -42,6 +42,91 @@
 				<string>1-90</string>
 			</dict>
 		</dict>
+    <dict>
+			<key>SettingStorageKey</key>
+			<string>daysBeforeCritical</string>
+			<key>SettingStoragePath</key>
+			<string>/Library/MonitoringClient/PluginSupport/_check_munki_settings.plist</string>
+			<key>SettingTitle</key>
+			<string>Days before alert is CRITICAL</string>
+			<key>SettingTitleHint</key>
+			<string></string>
+			<key>SettingType</key>
+			<dict>
+				<key>Type</key>
+				<string>NumberPicker</string>
+				<key>Value</key>
+				<string>1-90</string>
+			</dict>
+		</dict>
+    <dict>
+			<key>SettingStorageKey</key>
+			<string>consecutiveErrorsBeforeAlert</string>
+			<key>SettingStoragePath</key>
+			<string>/Library/MonitoringClient/PluginSupport/_check_munki_settings.plist</string>
+			<key>SettingTitle</key>
+			<string>Number of consecutive errors required before triggering Alert</string>
+			<key>SettingTitleHint</key>
+			<string></string>
+			<key>SettingType</key>
+			<dict>
+				<key>Type</key>
+				<string>NumberPicker</string>
+				<key>Value</key>
+				<string>1-90</string>
+			</dict>
+		</dict>
+    <dict>
+      <key>SettingStorageKey</key>
+      <string>notificationAgent</string>
+      <key>SettingStoragePath</key>
+      <string>/Library/MonitoringClient/PluginSupport/_check_munki_settings.plist</string>
+      <key>SettingTitle</key>
+      <string>Path to notification agent</string>
+      <key>SettingTitleHint</key>
+      <string></string>
+      <key>SettingType</key>
+      <dict>
+        <key>Type</key>
+        <string>TextField</string>
+        <key>Value</key>
+        <string></string>
+      </dict>
+    </dict>
+    <dict>
+      <key>SettingStorageKey</key>
+      <string>notificationTitle</string>
+      <key>SettingStoragePath</key>
+      <string>/Library/MonitoringClient/PluginSupport/_check_munki_settings.plist</string>
+      <key>SettingTitle</key>
+      <string>User notification alert title</string>
+      <key>SettingTitleHint</key>
+      <string></string>
+      <key>SettingType</key>
+      <dict>
+        <key>Type</key>
+        <string>TextField</string>
+        <key>Value</key>
+        <string></string>
+      </dict>
+    </dict>
+    <dict>
+      <key>SettingStorageKey</key>
+      <string>notificationTitleCritical</string>
+      <key>SettingStoragePath</key>
+      <string>/Library/MonitoringClient/PluginSupport/_check_munki_settings.plist</string>
+      <key>SettingTitle</key>
+      <string>CRITICAL user notification alert title</string>
+      <key>SettingTitleHint</key>
+      <string></string>
+      <key>SettingType</key>
+      <dict>
+        <key>Type</key>
+        <string>TextField</string>
+        <key>Value</key>
+        <string></string>
+      </dict>
+    </dict>
 	</array>
 	<key>ProgramArguments</key>
 	<array>
