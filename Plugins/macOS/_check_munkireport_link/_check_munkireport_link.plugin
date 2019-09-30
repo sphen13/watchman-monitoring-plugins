@@ -1,30 +1,69 @@
-#!/bin/bash
+#!/usr/bin/python
 
 # PLUGIN: Check MunkiReport Link
 # AUTHOR: Stephen Boyle @sphen13
-# DATE:   2017-10-25
+# DATE:   2019-09-10
 
-# read prefpane settings & set defaults
-pluginName="_check_munkireport_link"
-settings_plist="/Library/MonitoringClient/PluginSupport/"$pluginName"_settings.plist"
-clientSettings="/Library/MonitoringClient/ClientSettings.plist"
-PlistBuddy="/usr/libexec/PlistBuddy"
+# 2017-10-25  v1.0
+# 2019-09-10  v2.0
+#             - python & metadata
 
-if [ ! -f $settings_plist ]; then
-	# populate plist with defaults
-	defaults write "$settings_plist" PrefPaneVisibility -bool false
-	defaults write "$settings_plist" Initially_Disabled -bool false
-	chmod 644 "$settings_plist"
-fi
+import os
+import sys
+import subprocess
+import re
+from PluginToolkit import *
 
-baseURL=`defaults read /Library/Preferences/MunkiReport.plist BaseUrl 2>/dev/null`
-serial=`ioreg -c "IOPlatformExpertDevice" | awk -F '"' '/IOPlatformSerialNumber/ {print $4}'`
+# ------------------------------------------------------------------------------
+# FUNCTIONS
+# ------------------------------------------------------------------------------
 
-if [ -z "$baseURL" ]; then
+def deviceSerial():
+    # Get machine serial
+    ioreg = subprocess.Popen( "ioreg -c IOPlatformExpertDevice | awk -F '\"' '/IOPlatformSerialNumber/ {print $4}'",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            shell=True)
+    serialNumber,stderr = ioreg.communicate()
+
+    return serialNumber.strip()
+
+
+# ------------------------------------------------------------------------------
+
+# read preferences
+settings_plist = '/Library/MonitoringClient/PluginSupport/_check_munkireport_link_settings.plist'
+base_settings = {
+    'Initially_Disabled' : False,
+    'PrefPaneVisibility' : True,
+}
+settings = check_settings(base_settings, settings_plist)
+writePlist(settings, settings_plist)
+
+# get munkireport info
+munkireportPrefs = readPlist('/Library/Preferences/MunkiReport.plist', warn=False)
+if not munkireportPrefs:
 	# munkireport not active
-	exit 25
-fi
+	sys.exit(25)
+
+baseURL = munkireportPrefs.get('BaseUrl')
+serial=deviceSerial()
+
+if (baseURL == 'null'):
+	# munkireport not active
+	sys.exit(25)
 
 # munkireport active - lets send the info!
-echo "<a class=\"btn btn-xs\" target=\"blank\" href=\"$baseURL/index.php?/clients/detail/$serial\">View in MunkiReport</a>"
-exit 0
+# commented out as we are using a true integration now!
+#print('<a class="btn btn-xs" target="blank" href="{}index.php?/clients/detail/{}">View in MunkiReport</a>'.format(baseURL, serial))
+
+reporter = Reporter()
+reporter.add_metadata(
+    identifier           = 'munkireport_link',
+    name                 = 'View in MunkiReport',
+    datatype             = 'integration_link',
+    value                = '{}index.php?/clients/detail/{}'.format(baseURL, serial),
+    visible              = True
+)
+
+sys.exit(0)
