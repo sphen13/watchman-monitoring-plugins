@@ -5,7 +5,7 @@
 	<key>PluginName</key>
 	<string>MunkiReport</string>
 	<key>PluginVersion</key>
-	<string>1.0</string>
+	<string>2.0</string>
 	<key>PluginOptions</key>
 	<array>
 		<dict>
@@ -30,5 +30,7 @@
 	<array>
 		<string>_check_munkireport_link.plugin</string>
 	</array>
+  <key>PluginVisible</key>
+  <false/>
 </dict>
 </plist>
