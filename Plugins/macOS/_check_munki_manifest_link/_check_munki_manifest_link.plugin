@@ -1,0 +1,75 @@
+#!/usr/bin/python
+
+# PLUGIN: Check Munki Manifest Link
+# AUTHOR: Stephen Boyle @sphen13
+# DATE:   2019-10-08
+#
+# Requires Atom and https://github.com/WizardOfOgz/atom-handler
+
+# 2019-10-08  v1.0
+
+import os
+import sys
+import subprocess
+import re
+from PluginToolkit import *
+
+# ------------------------------------------------------------------------------
+# VARIABLES
+# ------------------------------------------------------------------------------
+
+repoLocation = '/Volumes/tv-repo'
+
+
+# ------------------------------------------------------------------------------
+# FUNCTIONS
+# ------------------------------------------------------------------------------
+
+def deviceSerial():
+    # Get machine serial
+    ioreg = subprocess.Popen( "ioreg -c IOPlatformExpertDevice | awk -F '\"' '/IOPlatformSerialNumber/ {print $4}'",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            shell=True)
+    serialNumber,stderr = ioreg.communicate()
+
+    return serialNumber.strip()
+
+
+# ------------------------------------------------------------------------------
+
+# read preferences
+settings_plist = '/Library/MonitoringClient/PluginSupport/_check_munki_manifest_link_settings.plist'
+base_settings = {
+    'Initially_Disabled' : False,
+    'PrefPaneVisibility' : False,
+}
+settings = check_settings(base_settings, settings_plist)
+writePlist(settings, settings_plist)
+
+# check for munki
+munkiPrefs = readPlist('/Library/Preferences/ManagedInstalls.plist', warn=False)
+if not munkiPrefs:
+	# munki not active
+	sys.exit(25)
+
+# figure out manifest
+manifest = munkiPrefs.get('ClientIdentifier')
+if (manifest == 'null' or manifest == '' or not manifest):
+	# get serial
+	manifest=deviceSerial()
+
+# encode spaces
+manifest = manifest.replace(" ", "%20")
+
+# send info
+reporter = Reporter()
+reporter.add_metadata(
+    identifier           = 'munki_manifest_link',
+    name                 = 'Open in Atom',
+    datatype             = 'integration_link',
+    value                = 'atm://open?url=file://{}/manifests/{}'.format(repoLocation, manifest),
+    visible              = True
+)
+
+sys.exit(0)
