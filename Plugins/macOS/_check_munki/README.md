@@ -25,11 +25,11 @@ Key | Type | Default | Description
 ## Changelog
 
 ```
-# 2018-09-19	v1.0
-# 2018-11-01	v1.1
-#							- Change alerting frequency. wait until 3 consecutive errors to trigger (other than pending updates past due)
-#							- Nudge user after daysBeforeAlert
-#							- Add Apple Updates to the list of pendingInstalls
+# 2018-09-19  v1.0
+# 2018-11-01  v1.1
+#             - Change alerting frequency. wait until 3 consecutive errors to trigger (other than pending updates past due)
+#             - Nudge user after daysBeforeAlert
+#             - Add Apple Updates to the list of pendingInstalls
 # 2019-09-30  v1.2
 #             - Add more variables to GUI/plist
 ```
