@@ -152,7 +152,7 @@ if [ ! -z "$weAreOnline" ]; then
 			chmod 644 "$settings_plist"
 			exit 0
 		else
-			echo -e "Oops - this should not happen...  [$drift]\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift"
+			echo -e "Oops - this should not happen...  [$drift]\n\nntpServer: $ntpServer\nsecondsOfAcceptableDrift: $secondsOfAcceptableDrift\n\noutput: $output"
 			exit 2
 		fi
 	fi
