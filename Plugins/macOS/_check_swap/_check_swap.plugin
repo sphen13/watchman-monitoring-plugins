@@ -4,6 +4,10 @@
 # AUTHOR: Stephen Boyle @sphen13
 # DATE:   2017-02-26
 
+# 2017-02-26: v0.2
+# 2019-11-29: v0.3
+#               add output listing top 5 processes by memory usage
+
 # set defaults
 pluginName="_check_swap"
 warningThreshold=50
@@ -20,7 +24,7 @@ if [ ! -f $settings_plist ]; then
 	defaults write "$settings_plist" PrefPaneVisibility -bool true
 	defaults write "$settings_plist" Initially_Disabled -bool true
 	chmod 644 "$settings_plist"
-	
+
 	#server check
 	serverCheck=`ps -ax | grep -e "com.apple.serverd" -e "servermgrd" -e "fmserver" -e "4D.app" -e "LightSpeed Server" -e "MPServerDaemon" | grep -v grep`
 	if [ ! -z "$serverCheck" ]; then
@@ -30,7 +34,7 @@ if [ ! -f $settings_plist ]; then
 		isDisabled=`"$PlistBuddy" -c "Print :PluginsDisabled" "$clientSettings" | grep "$pluginName"`
 		if [ -z "$isDisabled" ]; then
 			"$PlistBuddy" -c "Add :PluginsDisabled: string $pluginName.plugin" "$clientSettings"
-		fi	
+		fi
 	fi
 	exit 25
 else
@@ -42,7 +46,7 @@ else
 	fi
 	isset=`defaults read "$settings_plist" alertThreshold 2>/dev/null`
 	if [ -z "$isset" ]; then
-		defaults write "$settings_plist" alertThreshold $alertThreshold		
+		defaults write "$settings_plist" alertThreshold $alertThreshold
 		chmod 644 "$settings_plist"
 	fi
 fi
@@ -58,10 +62,14 @@ let alertThresholdMB=$totalMemory*$alertThreshold/100
 swapUsed=`sysctl vm.swapusage | awk '{print substr($7, 0, length($7)-1)}' | cut -d'.' -f1`
 
 if [ "$swapUsed" -ge "$alertThresholdMB" ]; then
+  topProcesses=`top -l 1 -o CMPRS -n 5 -ncols 13 -S`
 	echo -e "Swap memory usage too high.\n\nTotal Memory: $totalMemory MB\nWarning Threshold: $warningThreshold%\nAlert Threshold: $alertThreshold%\nSwap Used: $swapUsed MB"
+  echo -e "\n\nTop 5 processes by memory usage:\n<tt>$topProcesses</tt>"
 	exit 2
 elif [ "$swapUsed" -ge "$warningThresholdMB" ]; then
+  topProcesses=`top -l 1 -o CMPRS -n 5 -ncols 13 -S`
 	echo -e "Swap memory usage high.\n\nTotal Memory: $totalMemory MB\nWarning Threshold: $warningThreshold%\nAlert Threshold: $alertThreshold%\nSwap Used: $swapUsed MB"
+  echo -e "\n\nTop 5 processes by memory usage:\n<tt>$topProcesses</tt>"
 	exit 20
 else
 	echo -e "Swap memory usage OK.\n\nTotal Memory: $totalMemory MB\nWarning Threshold: $warningThreshold%\nAlert Threshold: $alertThreshold%\nSwap Used: $swapUsed MB"
