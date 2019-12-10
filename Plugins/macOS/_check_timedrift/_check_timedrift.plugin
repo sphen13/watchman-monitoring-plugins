@@ -17,6 +17,8 @@
 #               fix output for new time drift
 # 2019-04-29: v1.4
 #               exit with informational status on initial ntp reset attempt
+# 2019-12-10: v1.4.2
+#               ignore kod_db error - output more details on error
 
 # set defaults
 pluginName="_check_timedrift"
@@ -81,7 +83,7 @@ if [ ! -z "$weAreOnline" ]; then
 	if [ "$osVersion" -lt "14" ]; then
 		output=`ntpdate -q "$ntpServer" 2>&1 | tail -1`
 	else
-		output=`sntp -t 10 "$ntpServer" 2>/dev/null | tail -1`
+		output=`sntp -t 10 "$ntpServer" | grep -v kod_db 2>/dev/null | tail -1`
 	fi
 
 	# check if ntp server unreachable
