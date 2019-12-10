@@ -35,4 +35,6 @@ Checks current time against **NTP reference server** time polled via `ntpdate` o
 #               fix output for new time drift
 # 2019-04-29: v1.4
 #               exit with informational status on initial ntp reset attempt
+# 2019-12-10: v1.4.2
+#               ignore kod_db error - output more details on error
 ```
