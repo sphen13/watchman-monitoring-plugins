@@ -1,0 +1,98 @@
+#!/usr/bin/python
+
+# PLUGIN:  Malware Detection
+# AUTHOR:  Stephen Boyle @sphen13
+# DATE:    2020-03-02
+# VERSION: 1.0
+
+# 2020-03-02	v1.0
+#				- initial version
+
+import os
+import sys
+import json
+from datetime import datetime
+from dateutil import parser
+from PluginToolkit import *
+
+# read preferences
+settings_plist = '/Library/MonitoringClient/PluginSupport/_check_detectx_settings.plist'
+base_settings = {
+    'PrefPaneVisibility' : True
+}
+settings = check_settings(base_settings, settings_plist)
+writePlist(settings, settings_plist)
+
+# do actual work
+detectx_plist = '/usr/local/munkireport/preflight.d/cache/detectx.json'
+#detectx_plist = '/Users/sphen/src/watchman-monitoring-plugins/Plugins/macOS/_check_detectx/test.json'
+exitStatus = 0
+
+exists = os.path.isfile(detectx_plist)
+if exists:
+    with open(detectx_plist, 'r') as f:
+        data = json.load(f)
+
+    # add logic to warn if detectx is installed but not reporting
+
+    # also add logic to not report when there are no updated stats
+
+    reporter = Reporter()
+
+    if data['infections']:
+        exitStatus = 2
+        reporter.add_metadata(
+            identifier           = 'detectx_infections',
+            name                 = '{} Infection(s) Found'.format(len(data['infections'])),
+            datatype             = 'string',
+            value                = '\n'.join("{}".format(item) for item in data['infections']),
+            visible              = True
+        )
+
+    if data['issues']:
+        exitStatus = 2
+        reporter.add_metadata(
+            identifier           = 'detectx_issues',
+            name                 = '{} Issue(s) Found'.format(len(data['issues'])),
+            datatype             = 'string',
+            value                = '\n'.join("{}".format(item) for item in data['issues']),
+            visible              = True
+        )
+        reporter.add_metadata(
+            identifier           = 'detectx_issues_remediation',
+            name                 = 'Issue Remediation Command',
+            datatype             = 'string',
+            value                = '\n'.join("rm -rf \"{}\"".format(item) for item in data['issues'])
+        )
+
+    if data['searchdate']:
+        searchdate = parser.parse(data['searchdate'])
+        reporter.add_metadata(
+            identifier           = 'detectx_searchdate',
+            name                 = 'Scan Date',
+            datatype             = 'string',
+            value                = searchdate.strftime("%m/%d/%Y, %H:%M:%S"),
+            visible              = True
+        )
+
+    if data['duration']:
+        reporter.add_metadata(
+            identifier           = 'detectx_duration',
+            name                 = 'Scan Duration',
+            datatype             = 'string',
+            value                = data['duration']
+        )
+
+    if data['version']:
+        reporter.add_metadata(
+            identifier           = 'detectx_version',
+            name                 = 'Malware Scanner Version',
+            datatype             = 'string',
+            value                = data['version']
+        )
+
+    # we have info to report - do it
+    sys.exit(exitStatus)
+
+# if we got this far lets not report anything
+sys.exit(25)
