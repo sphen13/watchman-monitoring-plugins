@@ -5,7 +5,7 @@
 	<key>PluginName</key>
 	<string>Third Vantage B2 Check</string>
 	<key>PluginVersion</key>
-	<string>1.1</string>
+	<string>1.3</string>
 	<key>PluginOptions</key>
 	<array>
 		<dict>
