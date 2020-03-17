@@ -2,9 +2,15 @@
 
 # PLUGIN:  Malware Detection
 # AUTHOR:  Stephen Boyle @sphen13
-# DATE:    2020-03-02
-# VERSION: 1.0
+# DATE:    2020-03-17
+# VERSION: 1.1
 
+# 2020-03-17	v1.1
+#				- Update reporting because of lack of metadata features
+#                   - Note: future use of `include_in_warnings` once framework updated
+#               - Add prefernce variables
+#               - Report DetectX not running or stale data
+#               - Report scans that take too long
 # 2020-03-02	v1.0
 #				- initial version
 
@@ -18,81 +24,121 @@ from PluginToolkit import *
 # read preferences
 settings_plist = '/Library/MonitoringClient/PluginSupport/_check_detectx_settings.plist'
 base_settings = {
-    'PrefPaneVisibility' : True
+    'PrefPaneVisibility' : True,
+    'DetectXLocation'    : '/Applications/Utilities/DetectX Swift.app',
+    'LastReport'         : datetime.datetime(1984, 01, 24, 0, 0),
+    'ConsecutiveStale'   : 0,
+    'StaleRunThreshold'  : 3,
+    'ScanDurationThresh' : 240
 }
 settings = check_settings(base_settings, settings_plist)
 writePlist(settings, settings_plist)
 
 # do actual work
 detectx_plist = '/usr/local/munkireport/preflight.d/cache/detectx.json'
-#detectx_plist = '/Users/sphen/src/watchman-monitoring-plugins/Plugins/macOS/_check_detectx/test.json'
 exitStatus = 0
 
-exists = os.path.isfile(detectx_plist)
-if exists:
+if os.path.isfile(detectx_plist):
     with open(detectx_plist, 'r') as f:
         data = json.load(f)
 
-    # add logic to warn if detectx is installed but not reporting
-
-    # also add logic to not report when there are no updated stats
-
-    reporter = Reporter()
-
-    if data['infections']:
-        exitStatus = 2
-        reporter.add_metadata(
-            identifier           = 'detectx_infections',
-            name                 = '{} Infection(s) Found'.format(len(data['infections'])),
-            datatype             = 'string',
-            value                = '\n'.join("{}".format(item) for item in data['infections']),
-            visible              = True
-        )
-
-    if data['issues']:
-        exitStatus = 2
-        reporter.add_metadata(
-            identifier           = 'detectx_issues',
-            name                 = '{} Issue(s) Found'.format(len(data['issues'])),
-            datatype             = 'string',
-            value                = '\n'.join("{}".format(item) for item in data['issues']),
-            visible              = True
-        )
-        reporter.add_metadata(
-            identifier           = 'detectx_issues_remediation',
-            name                 = 'Issue Remediation Command',
-            datatype             = 'string',
-            value                = '\n'.join("rm -rf \"{}\"".format(item) for item in data['issues'])
-        )
-
     if data['searchdate']:
-        searchdate = parser.parse(data['searchdate'])
-        reporter.add_metadata(
-            identifier           = 'detectx_searchdate',
-            name                 = 'Scan Date',
-            datatype             = 'string',
-            value                = searchdate.strftime("%m/%d/%Y, %H:%M:%S"),
-            visible              = True
-        )
+        searchdate = parser.parse(data['searchdate']).replace(tzinfo=None)
 
-    if data['duration']:
-        reporter.add_metadata(
-            identifier           = 'detectx_duration',
-            name                 = 'Scan Duration',
-            datatype             = 'string',
-            value                = data['duration']
-        )
+        if searchdate > settings['LastReport']:
+            # we have newer data than last run
+            settings['ConsecutiveStale'] = 0
+            settings['LastReport'] = searchdate
 
-    if data['version']:
-        reporter.add_metadata(
-            identifier           = 'detectx_version',
-            name                 = 'Malware Scanner Version',
-            datatype             = 'string',
-            value                = data['version']
-        )
+            reporter = Reporter()
 
-    # we have info to report - do it
-    sys.exit(exitStatus)
+            if data['infections']:
+                exitStatus = 2
+                # report via old print method as well:
+                print('{} Infection(s) Found:'.format(len(data['infections'])))
+                print('\n'.join("{}".format(item) for item in data['infections']))
+                reporter.add_metadata(
+                    identifier           = 'detectx_infections',
+                    name                 = '{} Infection(s) Found'.format(len(data['infections'])),
+                    datatype             = 'string',
+                    value                = '\n'.join("{}".format(item) for item in data['infections']),
+                    visible              = True
+                )
+
+            if data['issues']:
+                exitStatus = 2
+                # report via old print method as well:
+                print('{} Issue(s) Found:'.format(len(data['issues'])))
+                print('\n'.join("{}".format(item) for item in data['issues']))
+                reporter.add_metadata(
+                    identifier           = 'detectx_issues',
+                    name                 = '{} Issue(s) Found'.format(len(data['issues'])),
+                    datatype             = 'string',
+                    value                = '\n'.join("{}".format(item) for item in data['issues']),
+                    visible              = True
+                )
+                reporter.add_metadata(
+                    identifier           = 'detectx_issues_remediation',
+                    name                 = 'Issue Remediation Command',
+                    datatype             = 'string',
+                    value                = '\n'.join("rm -rf \"{}\"".format(item) for item in data['issues'])
+                )
+
+            reporter.add_metadata(
+                identifier           = 'detectx_searchdate',
+                name                 = 'Scan Date',
+                datatype             = 'string',
+                value                = searchdate.strftime("%m/%d/%Y, %H:%M:%S"),
+                visible              = True
+            )
+
+            if data['duration']:
+                if data['duration'] > settings['ScanDurationThresh']:
+                    # Scans are taking too long - report
+                    exitStatus = 2
+                    print('Malware scan took {} seconds to complete. This is abnomarlly long. You may want ot check periodic scanner configuration or the client machine.'.format(data['duration']))
+
+                reporter.add_metadata(
+                    identifier           = 'detectx_duration',
+                    name                 = 'Scan Duration',
+                    datatype             = 'string',
+                    value                = data['duration']
+                )
+
+            if data['version']:
+                reporter.add_metadata(
+                    identifier           = 'detectx_version',
+                    name                 = 'Malware Scanner Version',
+                    datatype             = 'string',
+                    value                = data['version']
+                )
+
+            # write out updated settings file
+            writePlist(settings, settings_plist)
+
+            # we have info to report - do it
+            sys.exit(exitStatus)
+        else:
+            # we do not have newer data since last run
+            settings['ConsecutiveStale'] += 1
+
+            if settings['ConsecutiveStale'] > settings['StaleRunThreshold']:
+                # report stale run
+                exitStatus = 2
+                print('Last malware scan at {} (UTC). No updated stats seen during the last {} reporting cycles. Please check periodic scanner configuration.'.format(searchdate.strftime("%m/%d/%Y, %H:%M:%S"),settings['ConsecutiveStale']))
+            else:
+                # stale do not report
+                exitStatus = 25
+            # write out updated settings file
+            writePlist(settings, settings_plist)
+            sys.exit(exitStatus)
+else:
+    if os.path.isdir(settings['DetectXLocation']):
+        # we have detectx installed but no report
+        exitStatus = 20
+        print('Malware scanner is present but is not reporting. Please check periodic scanner configuration.')
+        sys.exit(exitStatus)
+
 
 # if we got this far lets not report anything
 sys.exit(25)
