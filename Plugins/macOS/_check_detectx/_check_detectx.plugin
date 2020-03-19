@@ -2,9 +2,13 @@
 
 # PLUGIN:  Malware Detection
 # AUTHOR:  Stephen Boyle @sphen13
-# DATE:    2020-03-17
-# VERSION: 1.1
+# DATE:    2020-03-19
+# VERSION: 1.2
 
+# 2020-03-19	v1.2
+#				- Limit slow scan notifications to 3+ consective slow runs
+#               - Fix typos
+#               - Add more prefs in the GUI
 # 2020-03-17	v1.1
 #				- Update reporting because of lack of metadata features
 #                   - Note: future use of `include_in_warnings` once framework updated
@@ -28,7 +32,9 @@ base_settings = {
     'DetectXLocation'    : '/Applications/Utilities/DetectX Swift.app',
     'LastReport'         : datetime.datetime(1984, 01, 24, 0, 0),
     'ConsecutiveStale'   : 0,
+    'ConsecutiveSlow'    : 0,
     'StaleRunThreshold'  : 3,
+    'SlowRunThreshold'   : 2,
     'ScanDurationThresh' : 240
 }
 settings = check_settings(base_settings, settings_plist)
@@ -94,9 +100,17 @@ if os.path.isfile(detectx_plist):
 
             if data['duration']:
                 if data['duration'] > settings['ScanDurationThresh']:
-                    # Scans are taking too long - report
-                    exitStatus = 2
-                    print('Malware scan took {} seconds to complete. This is abnomarlly long. You may want ot check periodic scanner configuration or the client machine.'.format(data['duration']))
+                    # Scans are taking too long
+                    settings['ConsecutiveSlow'] += 1
+                    print('Malware scan took {} seconds to complete. This is abnormally long. You may want to check periodic scanner configuration or the client machine.'.format(data['duration']))
+                    if settings['ConsecutiveSlow'] > settings['SlowRunThreshold']:
+                        # report
+                        exitStatus = 2
+                    else:
+                        # warn
+                        exitStatus = 20
+                else:
+                    settings['ConsecutiveSlow'] = 0
 
                 reporter.add_metadata(
                     identifier           = 'detectx_duration',
