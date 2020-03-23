@@ -3,8 +3,10 @@
 # PLUGIN:  Malware Detection
 # AUTHOR:  Stephen Boyle @sphen13
 # DATE:    2020-03-19
-# VERSION: 1.2
+# VERSION: 1.2.1
 
+# 2020-03-19	v1.2.1
+#				- Only report stale data after 'StaleRunThreshold' stale runs and 'StaleRunTimeDelta' time has elapsed from last report
 # 2020-03-19	v1.2
 #				- Limit slow scan notifications to 3+ consective slow runs
 #               - Fix typos
@@ -35,7 +37,8 @@ base_settings = {
     'ConsecutiveSlow'    : 0,
     'StaleRunThreshold'  : 3,
     'SlowRunThreshold'   : 2,
-    'ScanDurationThresh' : 240
+    'ScanDurationThresh' : 240,
+    'StaleRunTimeDelta'  : 86400
 }
 settings = check_settings(base_settings, settings_plist)
 writePlist(settings, settings_plist)
@@ -137,9 +140,14 @@ if os.path.isfile(detectx_plist):
             settings['ConsecutiveStale'] += 1
 
             if settings['ConsecutiveStale'] > settings['StaleRunThreshold']:
-                # report stale run
-                exitStatus = 2
-                print('Last malware scan at {} (UTC). No updated stats seen during the last {} reporting cycles. Please check periodic scanner configuration.'.format(searchdate.strftime("%m/%d/%Y, %H:%M:%S"),settings['ConsecutiveStale']))
+                # have we also been stale for 24+ hours?
+                if (datetime.datetime.now() - parser.parse(data['searchdate']).replace(tzinfo=None)).total_seconds() > settings['StaleRunTimeDelta']:
+                    # report stale run
+                    exitStatus = 2
+                    print('Last malware scan at {}. No updated stats seen during the last {} reporting cycles and {} hours. Please check periodic scanner configuration.'.format(searchdate.strftime("%m/%d/%Y, %H:%M:%S"),settings['ConsecutiveStale'],round((datetime.datetime.now() - parser.parse(data['searchdate']).replace(tzinfo=None)).total_seconds()/3600)))
+                else:
+                    # stale do not report
+                    exitStatus = 25
             else:
                 # stale do not report
                 exitStatus = 25
