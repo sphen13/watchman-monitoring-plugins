@@ -2,11 +2,13 @@
 
 # PLUGIN: Swap
 # AUTHOR: Stephen Boyle @sphen13
-# DATE:   2017-02-26
+# DATE:   2020-03-27
 
 # 2017-02-26: v0.2
 # 2019-11-29: v0.3
 #               add output listing top 5 processes by memory usage
+# 2020-03-27: v1.0
+#               more useful output
 
 # set defaults
 pluginName="_check_swap"
@@ -61,17 +63,46 @@ let alertThresholdMB=$totalMemory*$alertThreshold/100
 
 swapUsed=`sysctl vm.swapusage | awk '{print substr($7, 0, length($7)-1)}' | cut -d'.' -f1`
 
-if [ "$swapUsed" -ge "$alertThresholdMB" ]; then
-  topProcesses=`top -l 1 -o CMPRS -n 5 -ncols 13 -S`
-	echo -e "Swap memory usage too high.\n\nTotal Memory: $totalMemory MB\nWarning Threshold: $warningThreshold%\nAlert Threshold: $alertThreshold%\nSwap Used: $swapUsed MB"
-  echo -e "\n\nTop 5 processes by memory usage:\n<tt>$topProcesses</tt>"
-	exit 2
-elif [ "$swapUsed" -ge "$warningThresholdMB" ]; then
-  topProcesses=`top -l 1 -o CMPRS -n 5 -ncols 13 -S`
-	echo -e "Swap memory usage high.\n\nTotal Memory: $totalMemory MB\nWarning Threshold: $warningThreshold%\nAlert Threshold: $alertThreshold%\nSwap Used: $swapUsed MB"
-  echo -e "\n\nTop 5 processes by memory usage:\n<tt>$topProcesses</tt>"
-	exit 20
-else
-	echo -e "Swap memory usage OK.\n\nTotal Memory: $totalMemory MB\nWarning Threshold: $warningThreshold%\nAlert Threshold: $alertThreshold%\nSwap Used: $swapUsed MB"
-	exit 0
+exitStatus=0
+statusMessage="OK"
+processDetail=""
+
+if [ "$swapUsed" -ge "$warningThresholdMB" ]; then
+  exitStatus=20
+  statusMessage="high"
+
+  topProcesses=`top -l 1 -o CMPRS -n 5 -ncols 9 -S -stats pid,cpu,time,mem,cmprs,command`
+  processList=0
+
+  while IFS= read -r line; do
+    if [ $processList == 0 ]; then
+      if [[ $line = VM:* ]]; then
+        processDetail="\n\n${line}"
+      elif [[ $line = PID* ]]; then
+        processList=1
+        processDetail="${processDetail}\n"
+      fi
+    else
+      PID=$(echo "$line" | awk '{print $1}')
+      CPU=$(echo "$line" | awk '{print $2}')
+      CPUTIME=$(echo "$line" | awk '{print $3}')
+      MEM=$(echo "$line" | awk '{print $4}')
+      CMEM=$(echo "$line" | awk '{print $5}')
+      PROCESS=$(echo "$line" | awk '{$1=$2=$3=$4=$5=""; print $0}')
+
+      processDetail="${processDetail}\n$PROCESS ($PID):"
+      processDetail="${processDetail}\n-   CPU:\t$CPU"
+      processDetail="${processDetail}\n-  TIME:\t$CPUTIME"
+      processDetail="${processDetail}\n-   MEM:\t$MEM ($CMEM Compressed)"
+    fi
+  done <<< "$topProcesses"
+
+  if [ "$swapUsed" -ge "$alertThresholdMB" ]; then
+    exitStatus=2
+    statusMessage="too high"
+  fi
 fi
+
+echo -e "Swap memory usage $statusMessage.\n\nTotal Memory: $totalMemory MB\nWarning Threshold: $warningThreshold%\nAlert Threshold: $alertThreshold%\nSwap Used: $swapUsed MB"
+echo -e "<tt>$processDetail</tt>"
+exit $exitStatus
