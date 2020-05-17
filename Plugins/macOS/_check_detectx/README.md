@@ -20,6 +20,8 @@ Key | Type | Default | Description
 ## Changelog
 
 ```
+# 2020-05-17    v1.3
+#               - Ignore reports when at loginwindow / inactivity tracking
 # 2020-03-19    v1.2.1
 #               - Only report stale data after 'StaleRunThreshold' stale runs and 'StaleRunTimeDelta' time has elapsed from last report
 # 2020-03-19    v1.2
