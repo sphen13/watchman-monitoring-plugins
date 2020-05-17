@@ -2,8 +2,8 @@
 
 # PLUGIN:  Munki Status
 # AUTHOR:  Stephen Boyle @sphen13
-# DATE:    2018-09-19
-# VERSION: 1.1
+# DATE:    2020-05-17
+# VERSION: 1.3
 
 # 2018-09-19  v1.0
 # 2018-11-01  v1.1
@@ -12,6 +12,8 @@
 #              - Add Apple Updates to the list of pendingInstalls
 # 2019-09-30  v1.2
 #             - Add more variables to GUI/plist
+# 2020-05-17  v1.3
+#             - Remove Munki from public facing reports
 
 # munkiPrefs -> PendingUpdateCount
 
@@ -147,7 +149,7 @@ if [ -e "$munkiPrefs" ] && [ -e "$munkiReport" ]; then
   if [[ "$oldestUpdateDays" -ge "$daysBeforeAlert" ]]; then
     # lets notify that there have been pending updates for too long
     exitStatus=2
-    printf "There have been pending munki updates for $oldestUpdateDays days.\n"
+    printf "There have been pending updates for $oldestUpdateDays days.\n"
 
     # lets bug the user
     if [[ ! $userNotifiedToday ]] && [ -e "$notificationAgent" ]; then
@@ -185,7 +187,7 @@ if [ -e "$munkiPrefs" ] && [ -e "$munkiReport" ]; then
     fi
     # lets only warn if we dont have enough consecutiveErrors
     if [[ -z ${exitStatus} ]]; then exitStatus=20; fi
-    printf '### Munki Errors:\n%s\n\n' "${errors}"
+    printf '### Errors:\n%s\n\n' "${errors}"
   fi
 
   if [[ ${problemInstalls} ]]; then
@@ -199,7 +201,7 @@ if [ -e "$munkiPrefs" ] && [ -e "$munkiReport" ]; then
     fi
     # lets only warn if we dont have enough consecutiveErrors
     if [[ -z ${exitStatus} ]]; then exitStatus=20; fi
-    printf '### Munki has problematic installs:\n%s\n\n' "${problemInstalls}"
+    printf '### Problematic installs:\n%s\n\n' "${problemInstalls}"
   fi
 
   if [[ ${warnings} ]]; then
@@ -216,14 +218,14 @@ if [ -e "$munkiPrefs" ] && [ -e "$munkiReport" ]; then
     if [[ -z ${exitStatus} ]]; then exitStatus=20; fi
 
     # only report warnings if ther are no errors:
-    if [[ "${exitStatus}" -ne "2" ]]; then printf '### Munki Warnings:\n%s\n\n' "${warnings}"; fi
+    if [[ "${exitStatus}" -ne "2" ]]; then printf '### Warnings:\n%s\n\n' "${warnings}"; fi
   fi
 
   if [[ ${pendingInstalls[@]} ]]; then
     # lets notify that there are warnings. set exitStatus if its not previously set
     ### can we see pending sus installs too??
     if [[ -z ${exitStatus} ]]; then exitStatus=0; fi
-    echo "### Pending Munki Installs: (~$oldestUpdateDays days)"
+    echo "### Pending Installs: (~$oldestUpdateDays days)"
     printf '    %s\n' "${pendingInstalls[@]}"
     printf '\n'
   fi
@@ -241,7 +243,7 @@ if [ -e "$munkiPrefs" ] && [ -e "$munkiReport" ]; then
   # if we havent hit an exit status assume all is good
   if [[ -z ${exitStatus} ]]; then
     exitStatus=0
-    echo 'Munki is functioning well.'
+    echo 'All up to date.'
   fi
   exit $exitStatus
 fi
