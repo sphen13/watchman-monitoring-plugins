@@ -2,9 +2,14 @@
 
 # PLUGIN:  Malware Detection
 # AUTHOR:  Stephen Boyle @sphen13
-# DATE:    2020-05-17
-# VERSION: 1.3
+# DATE:    2020-05-18
+# VERSION: 1.3.1
 
+# 2020-05-18	v1.3.1
+#				- Inactivity status - human readable
+#               - Print "Good" status for non metadata integrations
+#               - Report more often so WM doesnt think we are stale
+#               - Check registration status
 # 2020-05-17	v1.3
 #				- Ignore reports when at loginwindow / inactivity tracking
 # 2020-03-19	v1.2.1
@@ -15,7 +20,7 @@
 #               - Add more prefs in the GUI
 # 2020-03-17	v1.1
 #				- Update reporting because of lack of metadata features
-#                   - Note: future use of `include_in_warnings` once framework updated
+#				- Note: future use of `include_in_warnings` once framework updated
 #               - Add prefernce variables
 #               - Report DetectX not running or stale data
 #               - Report scans that take too long
@@ -55,7 +60,17 @@ def userIdleTime():
             shell=True)
     idleTime,stderr = ioreg.communicate()
 
-    return idleTime.strip()
+    return int(idleTime.strip())
+
+def regStatus():
+    # Get registration status
+    ioreg = subprocess.Popen('"{}/Contents/MacOS/DetectX Swift" status'.format(settings['DetectXLocation']),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            shell=True)
+    regStatus,stderr = ioreg.communicate()
+
+    return regStatus.strip()
 
 # do actual work
 detectx_plist = '/usr/local/munkireport/preflight.d/cache/detectx.json'
@@ -71,87 +86,98 @@ if os.path.isfile(detectx_plist):
 
     if data['searchdate']:
         searchdate = parser.parse(data['searchdate']).replace(tzinfo=None)
+        cleanExit = '[{}] All Clean'.format(searchdate.strftime("%Y-%m-%d %H:%M:%S"))
+
+        # setup reporter and report information - even though we may have last time!
+        reporter = Reporter()
+
+        if data['infections']:
+            exitStatus = 2
+            # report via old print method as well:
+            print('{} Infection(s) Found:'.format(len(data['infections'])))
+            print('\n'.join("{}".format(item) for item in data['infections']))
+            reporter.add_metadata(
+                identifier           = 'detectx_infections',
+                name                 = '{} Infection(s) Found'.format(len(data['infections'])),
+                datatype             = 'string',
+                value                = '\n'.join("{}".format(item) for item in data['infections']),
+                visible              = True
+            )
+
+        if data['issues']:
+            exitStatus = 2
+            # report via old print method as well:
+            print('{} Issue(s) Found:'.format(len(data['issues'])))
+            print('\n'.join("{}".format(item) for item in data['issues']))
+            reporter.add_metadata(
+                identifier           = 'detectx_issues',
+                name                 = '{} Issue(s) Found'.format(len(data['issues'])),
+                datatype             = 'string',
+                value                = '\n'.join("{}".format(item) for item in data['issues']),
+                visible              = True
+            )
+            reporter.add_metadata(
+                identifier           = 'detectx_issues_remediation',
+                name                 = 'Issue Remediation Command',
+                datatype             = 'string',
+                value                = '\n'.join("rm -rf \"{}\"".format(item) for item in data['issues'])
+            )
+
+        reporter.add_metadata(
+            identifier           = 'detectx_searchdate',
+            name                 = 'Scan Date',
+            datatype             = 'string',
+            value                = searchdate.strftime("%m/%d/%Y, %H:%M:%S"),
+            visible              = True
+        )
+
+        if data['duration']:
+            if data['duration'] > settings['ScanDurationThresh']:
+                # Scans are taking too long
+                settings['ConsecutiveSlow'] += 1
+                print('Malware scan took {} seconds to complete. This is abnormally long. You may want to check periodic scanner configuration or the client machine.'.format(data['duration']))
+                if settings['ConsecutiveSlow'] > settings['SlowRunThreshold']:
+                    # report
+                    exitStatus = 2
+                else:
+                    # warn
+                    exitStatus = 20
+            else:
+                settings['ConsecutiveSlow'] = 0
+
+            reporter.add_metadata(
+                identifier           = 'detectx_duration',
+                name                 = 'Scan Duration',
+                datatype             = 'string',
+                value                = data['duration']
+            )
+
+        if data['version']:
+            reporter.add_metadata(
+                identifier           = 'detectx_version',
+                name                 = 'Malware Scanner Version',
+                datatype             = 'string',
+                value                = data['version']
+            )
+
+        reporter.add_metadata(
+            identifier           = 'detectx_registration',
+            name                 = 'Registration Status',
+            datatype             = 'string',
+            value                = regStatus()
+        )
 
         if searchdate > settings['LastReport']:
             # we have newer data than last run
             settings['ConsecutiveStale'] = 0
             settings['LastReport'] = searchdate
 
-            reporter = Reporter()
-
-            if data['infections']:
-                exitStatus = 2
-                # report via old print method as well:
-                print('{} Infection(s) Found:'.format(len(data['infections'])))
-                print('\n'.join("{}".format(item) for item in data['infections']))
-                reporter.add_metadata(
-                    identifier           = 'detectx_infections',
-                    name                 = '{} Infection(s) Found'.format(len(data['infections'])),
-                    datatype             = 'string',
-                    value                = '\n'.join("{}".format(item) for item in data['infections']),
-                    visible              = True
-                )
-
-            if data['issues']:
-                exitStatus = 2
-                # report via old print method as well:
-                print('{} Issue(s) Found:'.format(len(data['issues'])))
-                print('\n'.join("{}".format(item) for item in data['issues']))
-                reporter.add_metadata(
-                    identifier           = 'detectx_issues',
-                    name                 = '{} Issue(s) Found'.format(len(data['issues'])),
-                    datatype             = 'string',
-                    value                = '\n'.join("{}".format(item) for item in data['issues']),
-                    visible              = True
-                )
-                reporter.add_metadata(
-                    identifier           = 'detectx_issues_remediation',
-                    name                 = 'Issue Remediation Command',
-                    datatype             = 'string',
-                    value                = '\n'.join("rm -rf \"{}\"".format(item) for item in data['issues'])
-                )
-
-            reporter.add_metadata(
-                identifier           = 'detectx_searchdate',
-                name                 = 'Scan Date',
-                datatype             = 'string',
-                value                = searchdate.strftime("%m/%d/%Y, %H:%M:%S"),
-                visible              = True
-            )
-
-            if data['duration']:
-                if data['duration'] > settings['ScanDurationThresh']:
-                    # Scans are taking too long
-                    settings['ConsecutiveSlow'] += 1
-                    print('Malware scan took {} seconds to complete. This is abnormally long. You may want to check periodic scanner configuration or the client machine.'.format(data['duration']))
-                    if settings['ConsecutiveSlow'] > settings['SlowRunThreshold']:
-                        # report
-                        exitStatus = 2
-                    else:
-                        # warn
-                        exitStatus = 20
-                else:
-                    settings['ConsecutiveSlow'] = 0
-
-                reporter.add_metadata(
-                    identifier           = 'detectx_duration',
-                    name                 = 'Scan Duration',
-                    datatype             = 'string',
-                    value                = data['duration']
-                )
-
-            if data['version']:
-                reporter.add_metadata(
-                    identifier           = 'detectx_version',
-                    name                 = 'Malware Scanner Version',
-                    datatype             = 'string',
-                    value                = data['version']
-                )
-
             # write out updated settings file
             writePlist(settings, settings_plist)
 
             # we have info to report - do it
+            if exitStatus is 0:
+                print(cleanExit)
             sys.exit(exitStatus)
         else:
             # we do not have newer data since last run
@@ -165,8 +191,8 @@ if os.path.isfile(detectx_plist):
                     # report stale run
                     exitStatus = 2
 
-            print('Last malware scan at {}. No updated stats seen during the last {} reporting cycles and {} hours.'.format(searchdate.strftime("%m/%d/%Y, %H:%M:%S"),settings['ConsecutiveStale'],round((datetime.datetime.now() - parser.parse(data['searchdate']).replace(tzinfo=None)).total_seconds()/3600)))
-            print('User Idle Time: {}'.format(userIdleTime()))
+            print('[{}] No updated stats seen during the last {} reporting cycles and {} hours.'.format(searchdate.strftime("%Y-%m-%d %H:%M:%S"),settings['ConsecutiveStale'],round((datetime.datetime.now() - parser.parse(data['searchdate']).replace(tzinfo=None)).total_seconds()/3600)))
+            print('User Idle Time: {} min'.format(userIdleTime()/60))
 
             # write out updated settings file
             writePlist(settings, settings_plist)
@@ -175,7 +201,8 @@ else:
     if os.path.isdir(settings['DetectXLocation']):
         # we have detectx installed but no report
         exitStatus = 20
-        print('Malware scanner is present but is not reporting. Please check periodic scanner configuration.')
+
+        print('[{}] Malware scanner is present but is not reporting. Please check periodic scanner configuration.'.format(datetime.datetime.now().strftime("%Y-%m-%d")))
         sys.exit(exitStatus)
 
 

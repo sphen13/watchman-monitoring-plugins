@@ -6,20 +6,65 @@ Watchman Monitoring plugin to report on the results of DetectX
 
 **Preference File**: `/Library/MonitoringClient/PluginSupport/_check_detectx_settings.plist`
 
-Key | Type | Default | Description
---- | --- | --- | ---
-`DetectXLocation` | string | '/Applications/Utilities/DetectX Swift.app' | Location of DetectX app
-`StaleRunTimeDelta` | integer | 86400 | How much time can go by without new DetectX data before we raise an alert (in seconds)
-`StaleRunThreshold` | integer | 3 | How many consecutive plugin runs with no new data are ok before raising an alert
-`ScanDurationThresh` | integer | 240 | A DetectX scan taking `ScanDurationThresh` amount of seconds or longer is too long
-`SlowRunThreshold` | integer | 2 | How many consecutive DetectX scans taking longer than `ScanDurationThresh` are ok before raising an alert
-`PrefPaneVisibility` | boolean | true | Visibility within the WM pref-pane
+<table>
+<thead>
+	<tr>
+		<th>Key</th>
+		<th>Type</th>
+		<th>Default</th>
+    <th>Description</th>
+	</tr>
+</thead>
+<tbody>
+	<tr>
+		<td>`DetectXLocation`</td>
+		<td>string</td>
+		<td>'/Applications/Utilities/DetectX Swift.app'</td>
+    <td>Location of DetectX app</td>
+	</tr>
+  <tr>
+    <td>`StaleRunTimeDelta`</td>
+    <td>integer</td>
+    <td>86400</td>
+    <td>How much time can go by without new DetectX data before we raise an alert (in seconds)</td>
+  </tr>
+  <tr>
+    <td>`StaleRunThreshold`</td>
+    <td>integer</td>
+    <td>3</td>
+    <td>How many consecutive plugin runs with no new data are ok before raising an alert</td>
+  </tr>
+  <tr>
+    <td>`ScanDurationThresh`</td>
+    <td>integer</td>
+    <td>240</td>
+    <td>A DetectX scan taking `ScanDurationThresh` amount of seconds or longer is too long</td>
+  </tr>
+  <tr>
+    <td>`SlowRunThreshold`</td>
+    <td>integer</td>
+    <td>2</td>
+    <td>How many consecutive DetectX scans taking longer than `ScanDurationThresh` are ok before raising an alert</td>
+  </tr>
+  <tr>
+    <td>`PrefPaneVisibility`</td>
+    <td>boolean</td>
+    <td>true</td>
+    <td>Visibility within the WM pref-pane</td>
+  </tr>
+</tbody>
+</table>
 
 ## Process
 
 ## Changelog
 
 ```
+# 2020-05-18    v1.3.1
+#               - Inactivity status - human readable
+#               - Print "Good" status for non metadata integrations
+#               - Report more often so WM doesnt think we are stale
+#               - Check registration status
 # 2020-05-17    v1.3
 #               - Ignore reports when at loginwindow / inactivity tracking
 # 2020-03-19    v1.2.1
