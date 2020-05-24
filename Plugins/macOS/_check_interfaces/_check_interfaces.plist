@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>PluginName</key>
+    <string>Network Interface</string>
+    <key>PluginUUID</key>
+    <string>221E88BA-408B-4337-9B13-C4387E416D1F</string>
+    <key>PluginVersion</key>
+    <string>0.3</string>
+    <key>PluginOptions</key>
+    <array>
+      <dict>
+        <key>SettingStorageKey</key>
+        <string>.</string>
+        <key>SettingStoragePath</key>
+        <string>/Library/MonitoringClient/PluginSupport/_check_interfaces_settings.plist</string>
+        <key>SettingTitle</key>
+        <string>Alert if the primary network interface has an issue</string>
+        <key>SettingTitleHint</key>
+        <string></string>
+        <key>SettingType</key>
+        <dict>
+          <key>Type</key>
+          <string>DisplayOnly</string>
+          <key>Value</key>
+          <string></string>
+        </dict>
+      </dict>
+      <dict>
+        <key>SettingStorageKey</key>
+        <string>networkServiceToCheck</string>
+        <key>SettingStoragePath</key>
+        <string>/Library/MonitoringClient/PluginSupport/_check_interfaces_settings.plist</string>
+        <key>SettingTitle</key>
+        <string>Network Service to monitor</string>
+        <key>SettingTitleHint</key>
+        <string>Provide the exact Network Service name you want to monitor as listed within System Preferences -> Network</string>
+        <key>SettingType</key>
+        <dict>
+          <key>Type</key>
+          <string>TextField</string>
+          <key>Value</key>
+          <string></string>
+        </dict>
+      </dict>
+      <dict>
+        <key>SettingStorageKey</key>
+        <string>networkServiceSpeed</string>
+        <key>SettingStoragePath</key>
+        <string>/Library/MonitoringClient/PluginSupport/_check_interfaces_settings.plist</string>
+        <key>SettingTitle</key>
+        <string>Network Service minimum speed</string>
+        <key>SettingTitleHint</key>
+        <string>Provide the minimum desired link speed</string>
+        <key>SettingType</key>
+        <dict>
+          <key>Type</key>
+          <string>PopUpMenu</string>
+          <key>Value</key>
+          <array>
+            <string>100</string>
+            <string>1000</string>
+            <string>10GbaseT</string>
+          </array>
+        </dict>
+      </dict>
+    </array>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Library/MonitoringClient/Plugins/_check_interfaces.plugin</string>
+    </array>
+</dict>
+</plist>

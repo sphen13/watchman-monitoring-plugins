@@ -1,0 +1,250 @@
+#!/usr/bin/python
+
+# PLUGIN:  Check Interfaces
+# AUTHOR:  Stephen Boyle @sphen13
+# DATE:    2019-09-10
+# VERSION: 0.3
+
+# 2019-08-28	v0.1
+#				- initial version
+# 2019-08-28    v0.2
+#               - metadata
+# 2019-09-10    v0.3
+#               - auto exclude laptop by default
+
+import os
+import sys
+import subprocess
+import re
+from PluginToolkit import *
+
+# ------------------------------------------------------------------------------
+# FUNCTIONS
+# ------------------------------------------------------------------------------
+
+def getNetworkServices():
+    # Build list of lists containing network service info
+    # networkServices[n][0] = service name
+    # networkServices[n][1] = device description
+    # networkServices[n][3] = device name (enX)
+
+    networkSetup = subprocess.Popen(['/usr/sbin/networksetup', '-listnetworkserviceorder'],
+               stdout=subprocess.PIPE,
+               stderr=subprocess.STDOUT)
+
+    rawNetworkServices,stderr = networkSetup.communicate()
+
+    networkServices = []
+    i = 0
+    for line in rawNetworkServices.split('\n')[1:-1]:
+        if i % 3 == 0:
+            # (2) Thunderbolt Ethernet Slot 1
+            parsedInterfaces = re.search('^\(([0-9\*]+)\) (.*)',line)
+
+            # Check if disabled
+            isDisabled = False
+            if parsedInterfaces.group(1) == '*':
+                isDisabled = True
+
+            networkServices.append([parsedInterfaces.group(2),'','',isDisabled])
+
+        elif (i-1) % 3 == 0:
+            # (Hardware Port: Bluetooth PAN, Device: en6)
+            networkServices[i/3][1] = line.split(',')[0].split(': ')[1]
+            networkServices[i/3][2] = line.split(',')[1].split(': ')[1].split(')')[0]
+
+        i += 1
+
+    return networkServices
+
+
+def getDeviceInfo(device):
+    # Get status and linkspeed
+    ifconfig = subprocess.Popen(['/sbin/ifconfig', device],
+               stdout=subprocess.PIPE,
+               stderr=subprocess.STDOUT)
+
+    networkDeviceInfo,stderr = ifconfig.communicate()
+    return networkDeviceInfo
+
+
+def isLaptop():
+    # Get machine type
+    ifconfig = subprocess.Popen(['/usr/sbin/sysctl', 'hw.model'],
+               stdout=subprocess.PIPE,
+               stderr=subprocess.STDOUT)
+
+    machineType,stderr = ifconfig.communicate()
+    if 'Book' in machineType:
+        return True
+    else:
+        return False
+
+
+def networkServiceToDevice(networkServiceName, networkServices):
+    # Find the device associated with it
+    # - Return False if service is disabled
+    # - Return None if service is not found
+
+    for service in networkServices:
+        if service[0] == networkServiceName:
+            # Return False if disabled
+            if service[3] == True:
+                return False
+
+            return service[2]
+    return None
+
+
+def getDeviceMediaInfo(networkDeviceInfo):
+    # Get the interface media info for network device
+
+    for line in networkDeviceInfo.split('\n'):
+        if 'media' in line:
+            return line.split(': ')[1]
+
+    return None
+
+
+# ------------------------------------------------------------------------------
+
+# read preferences
+settings_plist = '/Library/MonitoringClient/PluginSupport/_check_interfaces_settings.plist'
+base_settings = {
+    'networkServiceToCheck' : '',
+    'networkServiceSpeed' : -1,
+	'Initially_Disabled' : '',
+    'PrefPaneVisibility' : True,
+}
+settings = check_settings(base_settings, settings_plist)
+
+# Set plugin to be disabled on laptops by default
+if settings['Initially_Disabled'] == '':
+    if isLaptop():
+    	Log.write('Disabling plugin ...')
+    	reporter = Reporter()
+    	reporter.add_attribute( 'disable', '_check_interfaces.plugin' )
+    	settings['Initially_Disabled'] = True
+    	writePlist( settings, settings_plist )
+    	sys.exit(25)
+    else:
+    	settings['Initially_Disabled'] = False
+
+# Set up our internal variables
+networkServices = getNetworkServices()
+device = None
+networkDeviceInfo = None
+mediaInfo = None
+exitStatus = 25
+
+# populate default networkServiceToCheck value with our best guess
+if settings['networkServiceToCheck'] == '':
+    # Find first Ethernet or 1000 interface
+    interface = None
+    i = 0
+    while not interface and i < len(networkServices):
+        if 'ethernet' in str(networkServices[i][0].lower()) or '1000' in str(networkServices[i][0].lower()) or '10g' in str(networkServices[i][0].lower()):
+            interface = networkServices[i]
+        i += 1
+    if interface is not None:
+        settings['networkServiceToCheck'] = interface[0]
+
+# populate default networkServiceSpeed value with our best guess
+if settings['networkServiceSpeed'] < 0 and settings['networkServiceToCheck'] != '':
+    # find current speed of networkServiceToCheck
+    device = networkServiceToDevice(settings['networkServiceToCheck'], networkServices)
+
+    if device is not False and device is not None:
+        mediaInfo = getDeviceMediaInfo(getDeviceInfo(device))
+
+        if mediaInfo is not None:
+            if '10g' in mediaInfo.lower():
+                settings['networkServiceSpeed'] = 2
+            elif '1000' in mediaInfo:
+                settings['networkServiceSpeed'] = 1
+            elif '100' in mediaInfo:
+                settings['networkServiceSpeed'] = 0
+
+# write settings
+writePlist(settings, settings_plist)
+
+# make sure all our variables are set up so we know what we are checking
+if device is None:
+    device = networkServiceToDevice(settings['networkServiceToCheck'], networkServices)
+
+# start checking and reporting
+
+# catch if interface is disabled or non-existant
+if device is False or device is None:
+    if device is False:
+        print('Network service is Disabled')
+        exitStatus = 2
+    elif settings['networkServiceToCheck'] == '':
+        sys.exit(25)
+    else:
+        print('Network service is not found')
+        exitStatus = 2
+    device = ''
+
+# get device info if we havent already
+if networkDeviceInfo is None:
+    if device != '':
+        networkDeviceInfo = getDeviceInfo(device)
+    else:
+        networkDeviceInfo = ''
+
+# do our speed checks
+if 'does not exist' not in networkDeviceInfo and exitStatus == 25:
+
+    mediaInfo = getDeviceMediaInfo(networkDeviceInfo)
+
+    if 'status: active' not in networkDeviceInfo:
+        print('Network service device is not active')
+        exitStatus = 2
+
+    if 'half' in mediaInfo:
+        print('Network service device is half duplex')
+        exitStatus = 2
+
+    if exitStatus == 25:
+        if '10g' in mediaInfo:
+            print('10 Gig Link')
+            exitStatus = 0
+        elif '1000' in mediaInfo and settings['networkServiceSpeed'] < 2:
+            print('Gigabit Link')
+            exitStatus = 0
+        elif '100' in mediaInfo and settings['networkServiceSpeed'] < 1:
+            print('100 Meg Link')
+            exitStatus = 0
+        else:
+            print('Lower than desired network speed')
+            exitStatus = 2
+
+else:
+    # network service exists but is not connected.
+    print('Network service device is not connected')
+    exitStatus = 2
+
+# send report
+reporter = Reporter()
+reporter.add_metadata(
+    identifier           = 'interfaces_device',
+    name                 = 'Device',
+    datatype             = 'string',
+    value                = device
+)
+reporter.add_metadata(
+    identifier           = 'interfaces_networkService',
+    name                 = 'Network Service',
+    datatype             = 'string',
+    value                = settings['networkServiceToCheck']
+)
+if mediaInfo is not None:
+    reporter.add_metadata(
+        identifier           = 'interfaces_mediaInfo',
+        name                 = 'Device Media Info',
+        datatype             = 'string',
+        value                = mediaInfo
+    )
+
+sys.exit(exitStatus)
