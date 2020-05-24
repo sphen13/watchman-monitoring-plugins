@@ -1,0 +1,22 @@
+{
+	"product" : "DetectX Swift",
+	"registered" : true,
+	"version" : "1.093",
+	"searchdate" : "2020-02-28T09:48:18-0500",
+	"duration" : 300.56,
+	"spotlightindexing" : true,
+	"issues" : [
+		"/Users/acannata/Library/Preferences/com.wondershare.helper_compact.plist",
+		"/Users/acannata/Library/Application Support/wondershare",
+		"/Users/acannata/Library/Application Support/Conduit/",
+		"/Users/Shared/wondershare.plist",
+		"/Users/Shared/.Wondershare.dat"
+	],
+	"infections" : [
+	],
+	"hashes" : [
+		"4c83775a46712e609e05b3c470a53c347da92b9eacfd2acc898aa0329c569297  /Users/acannata/Library/Preferences/com.wondershare.helper_compact.plist",
+		"37084b649bb73c5f715999d5dbe153d8d146eed7792818c908388b60dfef66ff  /Users/Shared/wondershare.plist",
+		"73772cde3f12e20d5be1427d03508b9558e0dfaa3f1a6bd9bb0541ea329bd0dc  /Users/Shared/.Wondershare.dat"
+	]
+}

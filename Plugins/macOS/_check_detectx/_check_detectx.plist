@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>PluginName</key>
+    <string>Malware Detection</string>
+    <key>PluginUUID</key>
+    <string>9CC085EE-F23A-4E4D-B78A-52FAF0D8E5D5</string>
+    <key>PluginVersion</key>
+    <string>1.3.1</string>
+    <key>PluginOptions</key>
+    <array>
+      <dict>
+        <key>SettingStorageKey</key>
+        <string>.</string>
+        <key>SettingStoragePath</key>
+        <string>/Library/MonitoringClient/PluginSupport/_check_detectx_settings.plist</string>
+        <key>SettingTitle</key>
+        <string>Report malware</string>
+        <key>SettingTitleHint</key>
+        <string></string>
+        <key>SettingType</key>
+        <dict>
+          <key>Type</key>
+          <string>DisplayOnly</string>
+          <key>Value</key>
+          <string></string>
+        </dict>
+      </dict>
+      <dict>
+        <key>SettingStorageKey</key>
+        <string>DetectXLocation</string>
+        <key>SettingStoragePath</key>
+        <string>/Library/MonitoringClient/PluginSupport/_check_detectx_settings.plist</string>
+        <key>SettingTitle</key>
+        <string>Malware scanner location</string>
+        <key>SettingTitleHint</key>
+        <string></string>
+        <key>SettingType</key>
+        <dict>
+          <key>Type</key>
+          <string>FilePicker</string>
+          <key>Value</key>
+          <string></string>
+        </dict>
+      </dict>
+      <dict>
+        <key>SettingStorageKey</key>
+        <string>StaleRunThreshold</string>
+        <key>SettingStoragePath</key>
+        <string>/Library/MonitoringClient/PluginSupport/_check_detectx_settings.plist</string>
+        <key>SettingTitle</key>
+        <string>Report if no new scan data after X reports</string>
+        <key>SettingTitleHint</key>
+        <string></string>
+        <key>SettingType</key>
+        <dict>
+          <key>Type</key>
+          <string>TextField</string>
+          <key>Value</key>
+          <string></string>
+        </dict>
+      </dict>
+      <dict>
+        <key>SettingStorageKey</key>
+        <string>ScanDurationThresh</string>
+        <key>SettingStoragePath</key>
+        <string>/Library/MonitoringClient/PluginSupport/_check_detectx_settings.plist</string>
+        <key>SettingTitle</key>
+        <string>Consider a scan slow if it takes longer than X seconds</string>
+        <key>SettingTitleHint</key>
+        <string></string>
+        <key>SettingType</key>
+        <dict>
+          <key>Type</key>
+          <string>TextField</string>
+          <key>Value</key>
+          <string></string>
+        </dict>
+      </dict>
+      <dict>
+        <key>SettingStorageKey</key>
+        <string>SlowRunThreshold</string>
+        <key>SettingStoragePath</key>
+        <string>/Library/MonitoringClient/PluginSupport/_check_detectx_settings.plist</string>
+        <key>SettingTitle</key>
+        <string>Report if we have X consective slow scans</string>
+        <key>SettingTitleHint</key>
+        <string></string>
+        <key>SettingType</key>
+        <dict>
+          <key>Type</key>
+          <string>TextField</string>
+          <key>Value</key>
+          <string></string>
+        </dict>
+      </dict>
+    </array>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Library/MonitoringClient/Plugins/_check_detectx.plugin</string>
+    </array>
+</dict>
+</plist>
