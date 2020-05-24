@@ -80,7 +80,6 @@ if exists:
         print '%d System Software Update(s):' % appleUpdatesCount
         print(( '- {}\n' * len(appleUpdates)).format(*appleUpdates))
 
-    # set ard: sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -configure -computerinfo -set1 -1 "Whatever you want"
     setARDInfo(updatesCount+appleUpdatesCount)
 
     # we have info to report - do it
