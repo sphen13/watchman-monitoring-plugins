@@ -2,17 +2,32 @@
 
 # PLUGIN:  Munki Installs
 # AUTHOR:  Stephen Boyle @sphen13
-# DATE:    2019-04-29
-# VERSION: 1.0
+# DATE:    2020-05-24
+# VERSION: 1.1
 
+# 2020-05-24	v1.0.1
+#               - add count to ard info
+#				- remove debug
 # 2019-04-29	v1.0
 #				- initial version
 
 import os
 import sys
 import datetime
+import subprocess
 from PluginToolkit import writePlist
 from PluginToolkit import check_settings
+
+def setARDInfo(value):
+    # Set ARD info 4 to value
+    kicker='/System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart'
+
+    ioreg = subprocess.Popen('{} -configure -computerinfo -set4 -4 "{}"'.format(kicker, value),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            shell=True)
+    result,stderr = ioreg.communicate()
+    return
 
 # read preferences
 settings_plist = '/Library/MonitoringClient/PluginSupport/_check_munki_installs_settings.plist'
@@ -28,7 +43,7 @@ if settings['ignoreInstalls']:
     # split up the comma delimited strings
     ignoreList = [x.strip() for x in settings['ignoreInstalls'].split(",")]
 
-print(ignoreList)
+#print(ignoreList)
 
 # do actual work
 start = datetime.datetime.now() - datetime.timedelta(days=30)
@@ -64,6 +79,9 @@ if exists:
     if appleUpdates:
         print '%d System Software Update(s):' % appleUpdatesCount
         print(( '- {}\n' * len(appleUpdates)).format(*appleUpdates))
+
+    # set ard: sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -configure -computerinfo -set1 -1 "Whatever you want"
+    setARDInfo(updatesCount+appleUpdatesCount)
 
     # we have info to report - do it
     sys.exit(0)
