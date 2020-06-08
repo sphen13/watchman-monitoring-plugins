@@ -2,8 +2,8 @@
 
 # PLUGIN: 	Check Shutdown Cause
 # AUTHOR: 	Stephen Boyle @sphen13
-# DATE:   	2019-04-29
-# VERSION:	0.4
+# DATE:   	2020-06-08
+# VERSION:	0.6
 
 # 2017-02-26	v0.1-0.2
 # 2018-10-30	v0.3
@@ -15,16 +15,18 @@
 #								exclude more causes from alert reporting (just info)
 # 2019-11-13  v0.5
 #               remove 1 as alert (seems to be normal T1/T2?)
+# 2020-06-08  v0.6
+#               remove 7 as alert (seems to be normal T2?)
 
 # read prefpane settings & set defaults
 settings_plist='/Library/MonitoringClient/PluginSupport/_check_shutdown_cause_settings.plist'
 
 # define shutdown causes - from https://georgegarside.com/blog/macos/shutdown-causes/
 shutdownCauseDescription=(
+  '7::OS Update? T2? BridgeOS?'
 	'5::Correct Shut Down.'
 	'3::Power Switch Initiated.'
 	'2::Low Battery'
-	'1::Temperature Over Limit'
 	'0::Power disconnected.'
 	'-1::Health Check.'
 	'-2::Power Supply Issue.'
@@ -50,15 +52,15 @@ shutdownCauseDescription=(
 	'-95::CPU temperature exceeds limits.'
 	'-100::Power supply temperature exceeds limits.'
 	'-101::LCD temperature exceeds limits.'
-	'-102::RSM Power Fail.'
+	'-102::Overvoltage.'
 	'-103::Battery cell under voltage detected.'
 	'-127::PMU forced shutdown.'
-	'-128::unknown'
+	'-128::unknown. Possibly RAM related.'
 )
 # set the shutdown causes we do not want to report
-shutdownCauseOK=('5')
+shutdownCauseOK=('5' '7')
 # set the shutdown causes we only want to warn on
-shutdownCauseWarn=('3' '2' '0' '1' '-1' '-60' '-128')
+shutdownCauseWarn=('3' '2' '0' '1' '7' '-1' '-60' '-128')
 
 currentOS=`sw_vers -productVersion | cut -d'.' -f2`
 lastBoot=`sysctl kern.boottime | cut -d"}" -f2 | awk '{print $1,$2,$3,$4,$5}'`
