@@ -60,6 +60,9 @@ Watchman Monitoring plugin to report on the results of DetectX
 ## Changelog
 
 ```
+# 2020-06-08    v1.3.2
+#               - Account for machine sleeping
+#               - Notify on DetectX Error
 # 2020-05-18    v1.3.1
 #               - Inactivity status - human readable
 #               - Print "Good" status for non metadata integrations
@@ -70,13 +73,13 @@ Watchman Monitoring plugin to report on the results of DetectX
 # 2020-03-19    v1.2.1
 #               - Only report stale data after 'StaleRunThreshold' stale runs and 'StaleRunTimeDelta' time has elapsed from last report
 # 2020-03-19    v1.2
-#               - Limit slow scan notifications to 3+ consective slow runs
+#               - Limit slow scan notifications to 3+ consecutive slow runs
 #               - Fix typos
 #               - Add more prefs in the GUI
 # 2020-03-17    v1.1
 #               - Update reporting because of lack of metadata features
 #               - Note: future use of `include_in_warnings` once framework updated
-#               - Add prefernce variables
+#               - Add preference variables
 #               - Report DetectX not running or stale data
 #               - Report scans that take too long
 # 2020-03-02    v1.0
