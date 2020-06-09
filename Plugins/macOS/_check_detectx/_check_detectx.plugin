@@ -2,9 +2,14 @@
 
 # PLUGIN:  Malware Detection
 # AUTHOR:  Stephen Boyle @sphen13
-# DATE:    2020-06-08
-# VERSION: 1.3.3
+# DATE:    2020-06-09
+# VERSION: 1.4
 
+# 2020-06-09	v1.4
+#				- Tweak alert on DetectX Error
+#				- Remove sleep debug messages
+# 2020-06-08	v1.3.4
+#				- Alert on DetectX Error
 # 2020-06-08	v1.3.3
 #				- Fix sleep predicate for some 10.15
 # 2020-06-08	v1.3.2
@@ -231,6 +236,11 @@ if os.path.isfile(detectx_plist):
             sys.exit(exitStatus)
         else:
             # we do not have newer data since last run
+            if registrationStatus is "Error":
+                # alert
+                exitStatus = 20
+                print("DetectX Error\n")
+
             sleepEventDetail = sleepEvents(settings['LastRun'])
             if userLoggedIn and not sleepEventDetail:
                 # we are not at login window and have not logged sleep events - lets mark as stale run
@@ -256,9 +266,9 @@ if os.path.isfile(detectx_plist):
             # diag info
             print('User Idle Time: {} min'.format(userIdleTime()/60))
             #print('Power State: {}'.format(powerState()))
-            if sleepEventDetail:
-                print('Recent Sleep Events:')
-                print(sleepEventDetail)
+            #if sleepEventDetail:
+            #    print('Recent Sleep Events:')
+            #    print(sleepEventDetail)
             #print(recentSleepEvents(10))
 
             settings['LastRun'] = datetime.datetime.now()

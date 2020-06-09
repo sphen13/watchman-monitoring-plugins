@@ -60,6 +60,11 @@ Watchman Monitoring plugin to report on the results of DetectX
 ## Changelog
 
 ```
+# 2020-06-09    v1.4
+#               - Tweak alert on DetectX Error
+#               - Remove sleep debug messages
+# 2020-06-08    v1.3.4
+#               - Alert on DetectX Error
 # 2020-06-08    v1.3.3
 #               - Fix sleep predicate for some 10.15
 # 2020-06-08    v1.3.2
