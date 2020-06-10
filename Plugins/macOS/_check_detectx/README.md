@@ -60,6 +60,10 @@ Watchman Monitoring plugin to report on the results of DetectX
 ## Changelog
 
 ```
+# 2020-06-10    v1.4.1
+#               - Make sure json file has correct permissions
+#               - Tweak alert on DetectX Error
+#               - Dont mention cycle count when we are sleeping
 # 2020-06-09    v1.4
 #               - Tweak alert on DetectX Error
 #               - Remove sleep debug messages

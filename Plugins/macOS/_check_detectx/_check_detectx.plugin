@@ -2,9 +2,13 @@
 
 # PLUGIN:  Malware Detection
 # AUTHOR:  Stephen Boyle @sphen13
-# DATE:    2020-06-09
-# VERSION: 1.4
+# DATE:    2020-06-10
+# VERSION: 1.4.1
 
+# 2020-06-10	v1.4.1
+#				- Make sure json file has correct permissions
+#				- Tweak alert on DetectX Error
+#               - Dont mention cycle count when we are sleeping
 # 2020-06-09	v1.4
 #				- Tweak alert on DetectX Error
 #				- Remove sleep debug messages
@@ -63,15 +67,15 @@ base_settings = {
 settings = check_settings(base_settings, settings_plist)
 writePlist(settings, settings_plist)
 
-def userIdleTime():
+#def userIdleTime():
     # Get user idle time
-    ioreg = subprocess.Popen("ioreg -c IOHIDSystem | awk '/HIDIdleTime/ {print int($NF/1000000000); exit}'",
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            shell=True)
-    idleTime,stderr = ioreg.communicate()
+#    ioreg = subprocess.Popen("ioreg -c IOHIDSystem | awk '/HIDIdleTime/ {print int($NF/1000000000); exit}'",
+#            stdout=subprocess.PIPE,
+#            stderr=subprocess.STDOUT,
+#            shell=True)
+#    idleTime,stderr = ioreg.communicate()
 
-    return int(idleTime.strip())
+#    return int(idleTime.strip())
 
 def regStatus():
     # Get registration status
@@ -128,6 +132,14 @@ userLoggedIn = [userLoggedIn,""][userLoggedIn in [u"loginwindow", None, u""]]
 if os.path.isfile(detectx_plist):
     with open(detectx_plist, 'r') as f:
         data = json.load(f)
+
+    # check and fix permissions
+    jsonPerms = os.stat(detectx_plist)
+    if str(oct(jsonPerms.st_mode)[-3:]) != "777":
+        os.chmod(detectx_plist, 0o777)
+    jsonPerms = os.stat(os.path.dirname(detectx_plist))
+    if str(oct(jsonPerms.st_mode)[-3:]) != "777":
+        os.chmod(os.path.dirname(detectx_plist), 0o777)
 
     if data['searchdate']:
         searchdate = parser.parse(data['searchdate']).replace(tzinfo=None)
@@ -238,13 +250,14 @@ if os.path.isfile(detectx_plist):
             # we do not have newer data since last run
             if registrationStatus is "Error":
                 # alert
-                exitStatus = 20
+                exitStatus = 2
                 print("DetectX Error\n")
 
             sleepEventDetail = sleepEvents(settings['LastRun'])
             if userLoggedIn and not sleepEventDetail:
                 # we are not at login window and have not logged sleep events - lets mark as stale run
                 settings['ConsecutiveStale'] += 1
+                cycleNotice = '{} reporting cycles and '.format(settings['ConsecutiveStale'])
 
             if settings['ConsecutiveStale'] > settings['StaleRunThreshold']:
                 # have we also been stale for 24+ hours?
@@ -256,7 +269,7 @@ if os.path.isfile(detectx_plist):
             if sleepEventDetail:
                 sleepNotice = "Machine has been sleeping. "
 
-            print('[{}] {}No updated stats seen during the last {} reporting cycles and {} hours.'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),sleepNotice,settings['ConsecutiveStale'],round((datetime.datetime.now() - parser.parse(data['searchdate']).replace(tzinfo=None)).total_seconds()/3600)))
+            print('[{}] {}No updated stats seen during the last {}and {} hours.'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),sleepNotice,cycleNotice,round((datetime.datetime.now() - parser.parse(data['searchdate']).replace(tzinfo=None)).total_seconds()/3600)))
             # output our results as normal
             if results is not "":
                 print('\n{}'.format(results))
@@ -264,7 +277,7 @@ if os.path.isfile(detectx_plist):
                 print('\n[{}] All Clean\n'.format(searchdate.strftime("%Y-%m-%d %H:%M:%S")))
 
             # diag info
-            print('User Idle Time: {} min'.format(userIdleTime()/60))
+            #print('User Idle Time: {} min'.format(userIdleTime()/60))
             #print('Power State: {}'.format(powerState()))
             #if sleepEventDetail:
             #    print('Recent Sleep Events:')
