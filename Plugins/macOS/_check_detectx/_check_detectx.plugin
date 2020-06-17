@@ -2,9 +2,11 @@
 
 # PLUGIN:  Malware Detection
 # AUTHOR:  Stephen Boyle @sphen13
-# DATE:    2020-06-10
-# VERSION: 1.4.1
+# DATE:    2020-06-17
+# VERSION: 1.4.2
 
+# 2020-06-17	v1.4.2
+#				- Ignore registration
 # 2020-06-10	v1.4.1
 #				- Make sure json file has correct permissions
 #				- Tweak alert on DetectX Error
@@ -77,18 +79,18 @@ writePlist(settings, settings_plist)
 
 #    return int(idleTime.strip())
 
-def regStatus():
+#def regStatus():
     # Get registration status
-    command = subprocess.Popen('"{}/Contents/MacOS/DetectX Swift" status'.format(settings['DetectXLocation']),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            shell=True)
-    regStatus,stderr = command.communicate()
+#    command = subprocess.Popen('"{}/Contents/MacOS/DetectX Swift" status'.format(settings['DetectXLocation']),
+#            stdout=subprocess.PIPE,
+#            stderr=subprocess.STDOUT,
+#            shell=True)
+#    regStatus,stderr = command.communicate()
 
-    if len(regStatus.strip().split('\n')) > 1:
-        return "Error"
+#    if len(regStatus.strip().split('\n')) > 1:
+#        return "Error"
 
-    return regStatus.strip()
+#    return regStatus.strip()
 
 #def powerState():
     # Get power state
@@ -219,17 +221,17 @@ if os.path.isfile(detectx_plist):
                 value                = data['version']
             )
 
-        registrationStatus = regStatus()
-        reporter.add_metadata(
-            identifier           = 'detectx_registration',
-            name                 = 'Registration Status',
-            datatype             = 'string',
-            value                = registrationStatus
-        )
-        if registrationStatus is "Error":
-            if exitStatus is 0:
+        #registrationStatus = regStatus()
+        #reporter.add_metadata(
+        #    identifier           = 'detectx_registration',
+        #    name                 = 'Registration Status',
+        #    datatype             = 'string',
+        #    value                = registrationStatus
+        #)
+        #if registrationStatus is "Error":
+        #    if exitStatus is 0:
                 # warn
-                exitStatus = 20
+        #        exitStatus = 20
 
         if searchdate > settings['LastReport']:
             # we have newer data than last run
@@ -248,10 +250,10 @@ if os.path.isfile(detectx_plist):
             sys.exit(exitStatus)
         else:
             # we do not have newer data since last run
-            if registrationStatus is "Error":
+            #if registrationStatus is "Error":
                 # alert
-                exitStatus = 2
-                print("DetectX Error\n")
+            #    exitStatus = 2
+            #    print("DetectX Error\n")
 
             sleepEventDetail = sleepEvents(settings['LastRun'])
             if userLoggedIn and not sleepEventDetail:
