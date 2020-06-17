@@ -60,6 +60,8 @@ Watchman Monitoring plugin to report on the results of DetectX
 ## Changelog
 
 ```
+# 2020-06-17    v1.4.2
+#               - Ignore registration
 # 2020-06-10    v1.4.1
 #               - Make sure json file has correct permissions
 #               - Tweak alert on DetectX Error
