@@ -76,7 +76,9 @@ Watchman Monitoring plugin that reports on the status of munki. It will trigger 
 #              - Nudge user after daysBeforeAlert
 #              - Add Apple Updates to the list of pendingInstalls
 # 2019-09-30  v1.2
-#             - Add more variables to GUI/plist
+#              - Add more variables to GUI/plist
 # 2020-05-26  v1.3.1
-#             - Remove Munki from public facing reports
+#              - Remove Munki from public facing reports
+# 2020-06-22  v1.4
+#              - Dont alert on certain temp errors
 ```

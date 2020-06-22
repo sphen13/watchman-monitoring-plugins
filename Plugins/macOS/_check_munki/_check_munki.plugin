@@ -2,8 +2,8 @@
 
 # PLUGIN:  Munki Status
 # AUTHOR:  Stephen Boyle @sphen13
-# DATE:    2020-05-26
-# VERSION: 1.3.1
+# DATE:    2020-06-22
+# VERSION: 1.4
 
 # 2018-09-19  v1.0
 # 2018-11-01  v1.1
@@ -14,6 +14,8 @@
 #             - Add more variables to GUI/plist
 # 2020-05-26  v1.3.1
 #             - Remove Munki from public facing reports
+# 2020-06-22  v1.4
+#             - Dont alert on certain temp errors
 
 # set defaults
 pluginName="_check_munki"
@@ -174,6 +176,8 @@ if [ -e "$munkiPrefs" ] && [ -e "$munkiReport" ]; then
     temp+=$(echo "${errors}" | grep "Could not download all available Apple updates")
     temp+=$(echo "${errors}" | grep "Unexpected error in munkilib.installer")
     temp+=$(echo "${errors}" | grep "The request timed out")
+    temp+=$(echo "${errors}" | grep "appears to be offline")
+    temp+=$(echo "${errors}" | grep "HTTP result 503")
     if [[ -z ${temp} ]]; then
       consecutiveErrors=$((consecutiveErrors+1))
       errorThisTime=1
