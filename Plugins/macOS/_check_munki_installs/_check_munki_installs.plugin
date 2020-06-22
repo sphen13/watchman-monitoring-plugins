@@ -2,10 +2,12 @@
 
 # PLUGIN:  Munki Installs
 # AUTHOR:  Stephen Boyle @sphen13
-# DATE:    2020-05-24
-# VERSION: 1.1
+# DATE:    2020-06-22
+# VERSION: 1.2
 
-# 2020-05-24	v1.0.1
+# 2020-06-22	v1.2
+#               - add date to install listing
+# 2020-05-24	v1.1
 #               - add count to ard info
 #				- remove debug
 # 2019-04-29	v1.0
@@ -51,7 +53,9 @@ end = datetime.datetime.now()
 
 munkiInstalls = '/Library/Managed Installs/Logs/Install.log'
 updates = []
+updatesDate = []
 appleUpdates = []
+appleUpdatesDate = []
 
 exists = os.path.isfile(munkiInstalls)
 if exists:
@@ -64,21 +68,25 @@ if exists:
                         currentUpdate=line[60:].split(':')[0]
                         if currentUpdate not in appleUpdates and not any(s in currentUpdate for s in ignoreList):
                             appleUpdates.append(currentUpdate)
+                            appleUpdatesDate.append(ts.strftime("%Y-%m-%d"))
                     else:
                         currentUpdate=line[38:].split(':')[0]
                         if currentUpdate not in updates and not any(s in currentUpdate for s in ignoreList):
                             updates.append(currentUpdate)
+                            updatesDate.append(ts.strftime("%Y-%m-%d"))
 
     updatesCount = len(updates)
     appleUpdatesCount = len(appleUpdates)
 
-    print '%d Updates Installed in the last 30 days\n' % (updatesCount+appleUpdatesCount)
+    print '%d Updates Installed in the last 30 days' % (updatesCount+appleUpdatesCount)
     if updates:
-        print '%d Software Update(s):' % updatesCount
-        print(( '- {}\n' * len(updates)).format(*updates))
+        print '\n%d Software Update(s):' % updatesCount
+        for x,y in zip(updatesDate,updates):
+            print('- [{}] {}'.format(x, y))
     if appleUpdates:
-        print '%d System Software Update(s):' % appleUpdatesCount
-        print(( '- {}\n' * len(appleUpdates)).format(*appleUpdates))
+        print '\n%d System Software Update(s):' % appleUpdatesCount
+        for x,y in zip(appleUpdatesDate,appleUpdates):
+            print('- [{}] {}'.format(x, y))
 
     setARDInfo(updatesCount+appleUpdatesCount)
 
