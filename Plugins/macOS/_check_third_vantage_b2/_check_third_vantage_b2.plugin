@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # PLUGIN: Third Vantage Middleware Check
-# v 1.3
+# v 1.3.1
 
 # read prefpane settings & set defaults
 pluginName="_check_third_vantage_b2"
@@ -16,7 +16,7 @@ AccessKey='H3NNZLAPH5WF8J8MRTAQ'
 SecretKey='eOLtjtpuu8KmlLbpyev15MneRlvzkuegnCRzB77Z'
 Region='us-east-1'
 S3Endpoint='s3.wasabisys.com'
-currentVersion="1.3"
+currentVersion="1.3.1"
 
 vercomp () {
   if [[ $1 == $2 ]]
@@ -100,11 +100,12 @@ if [ -f /usr/local/munki/middleware_b2_s3.py ]; then
 		defaults write ${munki_plist} S3Endpoint "${ourS3Endpoint}"
 	fi
 
-  osVersion=$(sw_vers -productVersion | cut -d. -f2)
+  osVersionMajor=$(sw_vers -productVersion | cut -d. -f1)
+  osVersionMinor=$(sw_vers -productVersion | cut -d. -f2)
 
 	# lets check what version we have
 	installedVersion=$(grep __version__ /usr/local/munki/middleware_b2_s3.py | cut -d "'" -f2 2>/dev/null)
-  if [ "$osVersion" -lt "12" ]; then
+  if [ "$osVersionMajor" -eq "10" ] && [ "$osVersionMinor" -lt "12" ]; then
   	if [[ ${installedVersion} != "1.2b" ]]; then
   	  echo "B2 Middleware ${installedVersion} != "1.2b".  Updating..."
       rm -f /usr/local/munki/middleware*
