@@ -1,0 +1,70 @@
+#!/usr/bin/python
+
+# PLUGIN:  Check Network Mounts
+# AUTHOR:  Stephen Boyle @sphen13
+# DATE:    2021-01-07
+# VERSION: 0.1
+
+# 2021-01-07    v0.1
+#                - initial version
+
+import sys
+import subprocess
+reload(sys)
+sys.setdefaultencoding('utf-8')
+sys.path.insert(1, '/Library/MonitoringClient/Modules')  # For testing outside WM enviro
+from PluginToolkit import *
+
+# ------------------------------------------------------------------------------
+# FUNCTIONS
+# ------------------------------------------------------------------------------
+
+def getNetworkMounts():
+    # Build list containing current mounts
+
+    cmd = "/sbin/mount | /usr/bin/grep // | /usr/bin/awk '{print $1}'"
+    mountCmd = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    rawMounts, stderr = mountCmd.communicate()
+
+    mounts = rawMounts.splitlines()
+
+    return mounts
+
+# ------------------------------------------------------------------------------
+
+# read preferences
+settings_plist = '/Library/MonitoringClient/PluginSupport/_check_networkmounts_settings.plist'
+base_settings = {
+    'networkMountWatchPaths' : '',
+    'Initially_Disabled' : True,
+    'PrefPaneVisibility' : True,
+}
+settings = check_settings(base_settings, settings_plist)
+
+# Set plugin to be disabled by default
+if not settings['Initially_Disabled']:
+	Log.write('Disabling plugin ...')
+	reporter = Reporter()
+	reporter.add_attribute( 'disable', '_check_networkmounts.plugin' )
+	settings['Initially_Disabled'] = True
+	writePlist( settings, settings_plist )
+	sys.exit(25)
+
+# Set up our internal variables
+watchPaths = [x.strip() for x in settings['networkMountWatchPaths'].split('|')]
+mounts = getNetworkMounts()
+exitStatus = 25
+
+# start checking and reporting
+
+# do our mount checks
+for mountPoint in watchPaths:
+    if not any(mountPoint in s for s in mounts):
+        exitStatus = 2
+        print (mountPoint + ' is missing')
+
+# if we didnt find anything bad lets exit OK
+if exitStatus == 25:
+    exitStatus = 0
+
+sys.exit(exitStatus)
