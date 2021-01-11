@@ -2,11 +2,13 @@
 
 # PLUGIN:  Check Network Mounts
 # AUTHOR:  Stephen Boyle @sphen13
-# DATE:    2021-01-07
-# VERSION: 0.1
+# DATE:    2021-01-11
+# VERSION: 0.2
 
 # 2021-01-07    v0.1
 #                - initial version
+# 2021-01-07    v0.2
+#                - fix grep to catch nfs
 
 import sys
 import subprocess
@@ -22,7 +24,7 @@ from PluginToolkit import *
 def getNetworkMounts():
     # Build list containing current mounts
 
-    cmd = "/sbin/mount | /usr/bin/grep // | /usr/bin/awk '{print $1}'"
+    cmd = "/sbin/mount | /usr/bin/grep '//\|:/' | /usr/bin/awk '{print $1}'"
     mountCmd = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     rawMounts, stderr = mountCmd.communicate()
 
