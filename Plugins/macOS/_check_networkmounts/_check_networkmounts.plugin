@@ -2,19 +2,22 @@
 
 # PLUGIN:  Check Network Mounts
 # AUTHOR:  Stephen Boyle @sphen13
-# DATE:    2021-01-11
-# VERSION: 0.2
+# DATE:    2021-01-12
+# VERSION: 1.0
 
 # 2021-01-07    v0.1
 #                - initial version
-# 2021-01-07    v0.2
+# 2021-01-11    v0.2
 #                - fix grep to catch nfs
+# 2021-01-12    v1.0
+#                - disable plugin if no watchpaths
+#                - translate %20 to space
 
 import sys
 import subprocess
-reload(sys)
-sys.setdefaultencoding('utf-8')
-sys.path.insert(1, '/Library/MonitoringClient/Modules')  # For testing outside WM enviro
+#reload(sys)
+#sys.setdefaultencoding('utf-8')
+#sys.path.insert(1, '/Library/MonitoringClient/Modules')  # For testing outside WM enviro
 from PluginToolkit import *
 
 # ------------------------------------------------------------------------------
@@ -28,7 +31,7 @@ def getNetworkMounts():
     mountCmd = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     rawMounts, stderr = mountCmd.communicate()
 
-    mounts = rawMounts.splitlines()
+    mounts = rawMounts.replace('%20',' ').splitlines()
 
     return mounts
 
@@ -38,19 +41,19 @@ def getNetworkMounts():
 settings_plist = '/Library/MonitoringClient/PluginSupport/_check_networkmounts_settings.plist'
 base_settings = {
     'networkMountWatchPaths' : '',
-    'Initially_Disabled' : True,
+    'Initially_Disabled' : False,
     'PrefPaneVisibility' : True,
 }
 settings = check_settings(base_settings, settings_plist)
 
-# Set plugin to be disabled by default
-if not settings['Initially_Disabled']:
-	Log.write('Disabling plugin ...')
-	reporter = Reporter()
-	reporter.add_attribute( 'disable', '_check_networkmounts.plugin' )
-	settings['Initially_Disabled'] = True
-	writePlist( settings, settings_plist )
-	sys.exit(25)
+# Set plugin to be disabled if no watchpaths
+if not settings['networkMountWatchPaths']:
+    Log.write('Disabling plugin ...')
+    reporter = Reporter()
+    reporter.add_attribute('disable', '_check_networkmounts.plugin')
+    settings['Initially_Disabled'] = True
+    writePlist(settings, settings_plist)
+    sys.exit(25)
 
 # Set up our internal variables
 watchPaths = [x.strip() for x in settings['networkMountWatchPaths'].split('|')]
