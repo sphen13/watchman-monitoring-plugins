@@ -2,8 +2,8 @@
 
 # PLUGIN:  Munki Status
 # AUTHOR:  Stephen Boyle @sphen13
-# DATE:    2020-06-22
-# VERSION: 1.4
+# DATE:    2021-01-13
+# VERSION: 1.4.1
 
 # 2018-09-19  v1.0
 # 2018-11-01  v1.1
@@ -16,6 +16,8 @@
 #             - Remove Munki from public facing reports
 # 2020-06-22  v1.4
 #             - Dont alert on certain temp errors
+# 2021-01-13  v1.4.1
+#             - Alert if using site_default manifest
 
 # set defaults
 pluginName="_check_munki"
@@ -143,6 +145,13 @@ if [ -e "$munkiPrefs" ] && [ -e "$munkiReport" ]; then
 
   # problem installs
   #problemInstalls=`$PlistBuddy "Print :ProblemInstalls:" "${munkiReport}" 2>/dev/null | sed -e 1d -e '$d'`
+
+  # check manifest
+  currentManifest=`defaults read /Library/Managed\ Installs/ManagedInstallReport.plist ManifestName`
+  if [[ "$currentManifest" == "site_default" ]]; then
+    exitStatus=2
+    printf "Munki is using the site_default manifest.\n"
+  fi
 
   # process for alerts
   if [[ "$oldestUpdateDays" -ge "$daysBeforeAlert" ]]; then
