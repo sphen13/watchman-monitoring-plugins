@@ -12,6 +12,8 @@
 # 2021-01-12    v1.0
 #                - disable plugin if no watchpaths
 #                - translate %20 to space
+# 2021-01-28    v1.1
+#                - by default alert each time we check for an unmounted volume
 
 import sys
 import subprocess
@@ -41,6 +43,8 @@ def getNetworkMounts():
 settings_plist = '/Library/MonitoringClient/PluginSupport/_check_networkmounts_settings.plist'
 base_settings = {
     'networkMountWatchPaths' : '',
+    'alreadyAlerted' : 0,
+    'sendRepeatedAlerts' : True,
     'Initially_Disabled' : False,
     'PrefPaneVisibility' : True,
 }
@@ -65,11 +69,23 @@ exitStatus = 25
 # do our mount checks
 for mountPoint in watchPaths:
     if not any(mountPoint in s for s in mounts):
-        exitStatus = 2
+        # process for repeated alerts
+        if settings['alreadyAlerted'] > 0 and settings['sendRepeatedAlerts']:
+            exitStatus = 200
+        else:
+            exitStatus = 2
+
+        settings['alreadyAlerted'] += 1
+        writePlist(settings, settings_plist)
+        
         print (mountPoint + ' is missing')
 
 # if we didnt find anything bad lets exit OK
 if exitStatus == 25:
+    # clear alreadyAlertted
+    if not settings['alreadyAlerted'] == 0:
+        settings['alreadyAlerted'] = 0
+        writePlist(settings, settings_plist)
     exitStatus = 0
 
 sys.exit(exitStatus)
