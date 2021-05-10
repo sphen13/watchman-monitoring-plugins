@@ -2,9 +2,11 @@
 
 # PLUGIN:  Malware Detection
 # AUTHOR:  Stephen Boyle @sphen13
-# DATE:    2020-06-17
-# VERSION: 1.4.2
+# DATE:    2021-05-10
+# VERSION: 1.4.3
 
+# 2020-06-17	v1.4.3
+#				- Fix python datetime issue
 # 2020-06-17	v1.4.2
 #				- Ignore registration
 # 2020-06-10	v1.4.1
@@ -57,8 +59,8 @@ settings_plist = '/Library/MonitoringClient/PluginSupport/_check_detectx_setting
 base_settings = {
     'PrefPaneVisibility' : True,
     'DetectXLocation'    : '/Applications/Utilities/DetectX Swift.app',
-    'LastReport'         : datetime.datetime(1984, 01, 24, 0, 0),
-    'LastRun'            : datetime.datetime.now(),
+    'LastReport'         : datetime(1984, 01, 24, 0, 0),
+    'LastRun'            : datetime.now(),
     'ConsecutiveStale'   : 0,
     'ConsecutiveSlow'    : 0,
     'StaleRunThreshold'  : 3,
@@ -237,7 +239,7 @@ if os.path.isfile(detectx_plist):
             # we have newer data than last run
             settings['ConsecutiveStale'] = 0
             settings['LastReport'] = searchdate
-            settings['LastRun'] = datetime.datetime.now()
+            settings['LastRun'] = datetime.now()
 
             # write out updated settings file
             writePlist(settings, settings_plist)
@@ -263,7 +265,7 @@ if os.path.isfile(detectx_plist):
 
             if settings['ConsecutiveStale'] > settings['StaleRunThreshold']:
                 # have we also been stale for 24+ hours?
-                if (datetime.datetime.now() - parser.parse(data['searchdate']).replace(tzinfo=None)).total_seconds() > settings['StaleRunTimeDelta']:
+                if (datetime.now() - parser.parse(data['searchdate']).replace(tzinfo=None)).total_seconds() > settings['StaleRunTimeDelta']:
                     # report stale run
                     exitStatus = 2
 
@@ -271,7 +273,7 @@ if os.path.isfile(detectx_plist):
             if sleepEventDetail:
                 sleepNotice = "Machine has been sleeping. "
 
-            print('[{}] {}No updated stats seen during the last {}and {} hours.'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),sleepNotice,cycleNotice,round((datetime.datetime.now() - parser.parse(data['searchdate']).replace(tzinfo=None)).total_seconds()/3600)))
+            print('[{}] {}No updated stats seen during the last {}and {} hours.'.format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"),sleepNotice,cycleNotice,round((datetime.now() - parser.parse(data['searchdate']).replace(tzinfo=None)).total_seconds()/3600)))
             # output our results as normal
             if results is not "":
                 print('\n{}'.format(results))
@@ -286,7 +288,7 @@ if os.path.isfile(detectx_plist):
             #    print(sleepEventDetail)
             #print(recentSleepEvents(10))
 
-            settings['LastRun'] = datetime.datetime.now()
+            settings['LastRun'] = datetime.now()
             # write out updated settings file
             writePlist(settings, settings_plist)
             sys.exit(exitStatus)
@@ -295,7 +297,7 @@ else:
         # we have detectx installed but no report
         exitStatus = 20
 
-        print('[{}] Malware scanner is present but is not reporting. Please check periodic scanner configuration.'.format(datetime.datetime.now().strftime("%Y-%m-%d")))
+        print('[{}] Malware scanner is present but is not reporting. Please check periodic scanner configuration.'.format(datetime.now().strftime("%Y-%m-%d")))
         sys.exit(exitStatus)
 
 
