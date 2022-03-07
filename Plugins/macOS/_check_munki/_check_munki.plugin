@@ -165,7 +165,7 @@ if [ -e "$munkiPrefs" ] && [ -e "$munkiReport" ]; then
       if [[ "$oldestUpdateDays" -ge "$daysBeforeCritical" ]]; then
         notificationTitle=$notificationTitleCritical
       fi
-      consoleUser=$(/usr/bin/python -c 'from SystemConfiguration import SCDynamicStoreCopyConsoleUser; import sys; username = (SCDynamicStoreCopyConsoleUser(None, None, None) or [None])[0]; username = [username,""][username in [u"loginwindow", None, u""]]; sys.stdout.write(username + "\n");')
+      consoleUser=$( echo "show State:/Users/ConsoleUser" | scutil | awk '/Name :/ && ! /loginwindow/ { print $3 }' )
       consoleUserUID=$(/usr/bin/id -u "${consoleUser}")
       launchctl asuser "$consoleUserUID" "$notificationAgent" -z Tink -t "$notificationTitle" -n "Updates have been due for $oldestUpdateDays days, Please Update Now" -b "Update Now" -o "Later" -a munki://updates > /dev/null 2>&1
       echo ">>> Sending notification to user <<<"
