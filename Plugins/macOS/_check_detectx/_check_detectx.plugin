@@ -1,10 +1,12 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 # PLUGIN:  Malware Detection
 # AUTHOR:  Stephen Boyle @sphen13
-# DATE:    2021-05-10
-# VERSION: 1.4.3
+# DATE:    2022-03-07
+# VERSION: 1.4.4
 
+# 2022-03-07	v1.4.4
+#				- Update python shebang + python3
 # 2020-06-17	v1.4.3
 #				- Fix python datetime issue
 # 2020-06-17	v1.4.2
@@ -59,7 +61,7 @@ settings_plist = '/Library/MonitoringClient/PluginSupport/_check_detectx_setting
 base_settings = {
     'PrefPaneVisibility' : True,
     'DetectXLocation'    : '/Applications/Utilities/DetectX Swift.app',
-    'LastReport'         : datetime(1984, 01, 24, 0, 0),
+    'LastReport'         : datetime(1984, 0o1, 24, 0, 0),
     'LastRun'            : datetime.now(),
     'ConsecutiveStale'   : 0,
     'ConsecutiveSlow'    : 0,
@@ -128,10 +130,11 @@ def sleepEvents(startDate):
 # do actual work
 detectx_plist = '/usr/local/munkireport/preflight.d/cache/detectx.json'
 exitStatus = 0
+cycleNotice = ''
 
 # is anyone logged in?
 userLoggedIn = (SCDynamicStoreCopyConsoleUser(None, None, None) or [None])[0]
-userLoggedIn = [userLoggedIn,""][userLoggedIn in [u"loginwindow", None, u""]]
+userLoggedIn = [userLoggedIn,""][userLoggedIn in ["loginwindow", None, ""]]
 
 if os.path.isfile(detectx_plist):
     with open(detectx_plist, 'r') as f:
@@ -245,8 +248,8 @@ if os.path.isfile(detectx_plist):
             writePlist(settings, settings_plist)
 
             # we have info to report - do it
-            if exitStatus is 0:
-                print('[{}] All Clean'.format(searchdate.strftime("%Y-%m-%d %H:%M:%S")))
+            if exitStatus == 0:
+                print(('[{}] All Clean'.format(searchdate.strftime("%Y-%m-%d %H:%M:%S"))))
             else:
                 print(results)
             sys.exit(exitStatus)
@@ -273,12 +276,12 @@ if os.path.isfile(detectx_plist):
             if sleepEventDetail:
                 sleepNotice = "Machine has been sleeping. "
 
-            print('[{}] {}No updated stats seen during the last {}and {} hours.'.format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"),sleepNotice,cycleNotice,round((datetime.now() - parser.parse(data['searchdate']).replace(tzinfo=None)).total_seconds()/3600)))
+            print(('[{}] {}No updated stats seen during the last {}and {} hours.'.format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"),sleepNotice,cycleNotice,round((datetime.now() - parser.parse(data['searchdate']).replace(tzinfo=None)).total_seconds()/3600))))
             # output our results as normal
-            if results is not "":
-                print('\n{}'.format(results))
+            if results != "":
+                print(('\n{}'.format(results)))
             else:
-                print('\n[{}] All Clean\n'.format(searchdate.strftime("%Y-%m-%d %H:%M:%S")))
+                print(('\n[{}] All Clean\n'.format(searchdate.strftime("%Y-%m-%d %H:%M:%S"))))
 
             # diag info
             #print('User Idle Time: {} min'.format(userIdleTime()/60))
@@ -297,7 +300,7 @@ else:
         # we have detectx installed but no report
         exitStatus = 20
 
-        print('[{}] Malware scanner is present but is not reporting. Please check periodic scanner configuration.'.format(datetime.now().strftime("%Y-%m-%d")))
+        print(('[{}] Malware scanner is present but is not reporting. Please check periodic scanner configuration.'.format(datetime.now().strftime("%Y-%m-%d"))))
         sys.exit(exitStatus)
 
 
