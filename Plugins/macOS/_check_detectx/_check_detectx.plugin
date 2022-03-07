@@ -130,6 +130,7 @@ def sleepEvents(startDate):
 # do actual work
 detectx_plist = '/usr/local/munkireport/preflight.d/cache/detectx.json'
 exitStatus = 0
+cycleNotice = ''
 
 # is anyone logged in?
 userLoggedIn = (SCDynamicStoreCopyConsoleUser(None, None, None) or [None])[0]
@@ -247,7 +248,7 @@ if os.path.isfile(detectx_plist):
             writePlist(settings, settings_plist)
 
             # we have info to report - do it
-            if exitStatus is 0:
+            if exitStatus == 0:
                 print(('[{}] All Clean'.format(searchdate.strftime("%Y-%m-%d %H:%M:%S"))))
             else:
                 print(results)
@@ -277,7 +278,7 @@ if os.path.isfile(detectx_plist):
 
             print(('[{}] {}No updated stats seen during the last {}and {} hours.'.format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"),sleepNotice,cycleNotice,round((datetime.now() - parser.parse(data['searchdate']).replace(tzinfo=None)).total_seconds()/3600))))
             # output our results as normal
-            if results is not "":
+            if results != "":
                 print(('\n{}'.format(results)))
             else:
                 print(('\n[{}] All Clean\n'.format(searchdate.strftime("%Y-%m-%d %H:%M:%S"))))
