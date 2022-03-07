@@ -33,7 +33,7 @@ def getNetworkMounts():
     mountCmd = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     rawMounts, stderr = mountCmd.communicate()
 
-    mounts = rawMounts.replace('%20',' ').splitlines()
+    mounts = rawMounts.decode().replace('%20',' ').splitlines()
 
     return mounts
 

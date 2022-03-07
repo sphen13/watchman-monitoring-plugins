@@ -34,7 +34,7 @@ def deviceSerial():
             shell=True)
     serialNumber,stderr = ioreg.communicate()
 
-    return serialNumber.strip()
+    return serialNumber.strip().decode()
 
 
 # ------------------------------------------------------------------------------
@@ -64,6 +64,7 @@ if (manifest == 'null' or manifest == '' or not manifest):
 manifest = manifest.replace(" ", "%20")
 
 # send info
+print('Munki Manifest Integration')
 reporter = Reporter()
 reporter.add_metadata(
     identifier           = 'munki_manifest_link',
