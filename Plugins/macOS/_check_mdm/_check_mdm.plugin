@@ -1,0 +1,142 @@
+#!/usr/bin/env python3
+import os
+import sys
+import platform
+import subprocess
+from PluginToolkit import writePlist
+from PluginToolkit import check_settings
+from distutils.version import LooseVersion
+
+
+# read preferences to know how to alert if there's a problem
+settings_plist = '/Library/MonitoringClient/PluginSupport/_check_mdm_settings.plist'
+base_settings = {
+    'mdm_warning' : 2,
+    'uamdm_warning': 2,
+    'PrefPaneVisibility' : True,
+}
+settings = check_settings(base_settings, settings_plist)
+writePlist(settings, settings_plist)
+
+# setup exit alerting variables
+# 0 == None, Notify
+# 1 == Warn, One email
+# 2 == Alert, Continuous emails
+if settings['mdm_warning'] == 0:
+    # none
+    mdm_warn_level = 20
+elif settings['mdm_warning'] == 1:
+    # warn
+    mdm_warn_level = 200
+else:
+    # alert
+    mdm_warn_level = 2
+
+if settings['uamdm_warning'] == 0:
+    uamdm_warn_level = 20
+elif settings['uamdm_warning'] == 1:
+    uamdm_warn_level = 200
+else:
+    uamdm_warn_level = 2
+
+
+# get macOS version
+mac_os = platform.mac_ver()[0]
+# check if this machine supports UAMDM
+uamdm = LooseVersion(mac_os) >= LooseVersion('10.13.4')
+
+
+def termy(cmd):
+    task = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = task.communicate()
+    return(out, err)
+
+def check_uamdm():
+    # only works on 10.13.4+
+    # checks if enrolled in MDM and if the user has approved it
+    out, err = termy([
+        '/usr/bin/profiles', 'status',
+        '-type', 'enrollment'
+    ])
+
+    if b'User Approved' in out:
+        # user has approved the MDM enrollment
+        return(True)
+    else:
+        # user has not approved the MDM enrollment
+        return(False)
+
+
+# get list of profiles
+out, err = termy([
+    '/usr/bin/profiles', '-C', '-v'
+])
+
+# break lines into a list
+data = out.split(b'\n')
+
+# setup variables
+mdm_approval = False
+mdm_installed = False
+mdm_profilecheck_installed = False
+mdm_profilecheck = 'com.mosyle.cert.5cab5aa1e07f5'
+mdm_vendorcheck = ['Third Vantage', 'Mosyle']
+
+# iterate through the profile data to search for an MDM profile and vendor
+for line in data:
+    if b'attribute: organization:' in line:
+        if b'=' in line:
+            # grab MDM org based on = separator
+            org = line.split(b'=')[-1].strip()
+        else:
+            # grab MDM org based on : separator
+            org = line.split(b':')[-1].strip()
+    if b'com.apple.mdm' in line:
+        # found an MDM profile!
+        mdm_installed = True
+        mdm_vendor = str(org, 'UTF-8')
+
+        if uamdm:
+            mdm_approval = check_uamdm()
+            if mdm_approval:
+                print("MDM is installed and approved.")
+            else:
+                print("MDM is installed and NOT approved.")
+        else:
+            # for pre-UAMDM macOS, a generic MDM is installed
+            print("MDM is installed.")
+        print(("MDM Vendor: {0}".format(mdm_vendor)))
+
+        if mdm_vendor in mdm_vendorcheck:
+            # our MDM matches the one we want to do a deeper check on
+            profile_installed = False
+            for line2 in data:
+                if mdm_profilecheck in str(line2, 'UTF-8'):
+                    # we have the profile we are checking for!
+                    profile_installed = True
+
+            if profile_installed:
+                # profile we are checking for is there
+                print(("Profile: {0} is installed".format(mdm_profilecheck)))
+            else:
+                # profile we are checking for is NOT installed
+                print(("Profile: {0} is NOT installed".format(mdm_profilecheck)))
+                mdm_installed = False
+
+if mdm_installed:
+    # MDM is installed
+    if uamdm:
+        # user approved MDM is required
+        if mdm_approval:
+            # MDM has been approved
+            sys.exit(0)
+        else:
+            # MDM isn't approved
+            sys.exit(uamdm_warn_level)
+    else:
+        # user approved MDM isn't required
+        sys.exit(0)
+else:
+    # MDM isn't installed
+    print("MDM not installed.")
+    sys.exit(mdm_warn_level)
