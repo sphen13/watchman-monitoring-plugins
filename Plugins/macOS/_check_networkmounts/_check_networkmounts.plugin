@@ -2,8 +2,8 @@
 
 # PLUGIN:  Check Network Mounts
 # AUTHOR:  Stephen Boyle @sphen13
-# DATE:    2021-01-12
-# VERSION: 1.0
+# DATE:    2022-03-07
+# VERSION: 1.1.1
 
 # 2021-01-07    v0.1
 #                - initial version
@@ -14,6 +14,8 @@
 #                - translate %20 to space
 # 2021-01-28    v1.1
 #                - by default alert each time we check for an unmounted volume
+# 2022-03-07    v1.1.1
+#                - update python shebang + python3
 
 import sys
 import subprocess

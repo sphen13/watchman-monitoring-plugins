@@ -2,8 +2,8 @@
 
 # PLUGIN:  Check Interfaces
 # AUTHOR:  Stephen Boyle @sphen13
-# DATE:    2019-09-10
-# VERSION: 0.3
+# DATE:    2022-03-07
+# VERSION: 0.4
 
 # 2019-08-28	v0.1
 #				- initial version
@@ -11,6 +11,8 @@
 #               - metadata
 # 2019-09-10    v0.3
 #               - auto exclude laptop by default
+# 2022-03-07    v0.4
+#               - update python shebang + python3
 
 import os
 import sys

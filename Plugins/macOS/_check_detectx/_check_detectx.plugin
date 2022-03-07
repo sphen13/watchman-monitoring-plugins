@@ -2,9 +2,11 @@
 
 # PLUGIN:  Malware Detection
 # AUTHOR:  Stephen Boyle @sphen13
-# DATE:    2021-05-10
-# VERSION: 1.4.3
+# DATE:    2022-03-07
+# VERSION: 1.4.4
 
+# 2022-03-07	v1.4.4
+#				- Update python shebang + python3
 # 2020-06-17	v1.4.3
 #				- Fix python datetime issue
 # 2020-06-17	v1.4.2
