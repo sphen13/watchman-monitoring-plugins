@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 # PLUGIN: Check Munki Manifest Link
 # AUTHOR: Stephen Boyle @sphen13
