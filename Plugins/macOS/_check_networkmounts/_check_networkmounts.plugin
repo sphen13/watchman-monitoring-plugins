@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 # PLUGIN:  Check Network Mounts
 # AUTHOR:  Stephen Boyle @sphen13
@@ -17,8 +17,6 @@
 
 import sys
 import subprocess
-#reload(sys)
-#sys.setdefaultencoding('utf-8')
 #sys.path.insert(1, '/Library/MonitoringClient/Modules')  # For testing outside WM enviro
 from PluginToolkit import *
 
@@ -77,8 +75,8 @@ for mountPoint in watchPaths:
 
         settings['alreadyAlerted'] += 1
         writePlist(settings, settings_plist)
-        
-        print (mountPoint + ' is missing')
+
+        print((mountPoint + ' is missing'))
 
 # if we didnt find anything bad lets exit OK
 if exitStatus == 25:
