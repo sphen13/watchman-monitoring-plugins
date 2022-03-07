@@ -1,12 +1,14 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 # PLUGIN: Check MunkiReport Link
 # AUTHOR: Stephen Boyle @sphen13
-# DATE:   2019-09-10
+# DATE:   2022-03-07
 
 # 2017-10-25  v1.0
 # 2019-09-10  v2.0
 #             - python & metadata
+# 2022-03-07  v2.0.1
+#             - update python shebang + python3
 
 import os
 import sys

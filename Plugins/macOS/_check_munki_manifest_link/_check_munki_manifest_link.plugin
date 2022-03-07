@@ -1,12 +1,13 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 # PLUGIN: Check Munki Manifest Link
 # AUTHOR: Stephen Boyle @sphen13
-# DATE:   2019-10-08
+# DATE:   2022-03-07
 #
 # Requires Atom and https://github.com/WizardOfOgz/atom-handler
 
 # 2019-10-08  v1.0
+# 2022-03-07  v1.0.1
 
 import os
 import sys
@@ -33,7 +34,7 @@ def deviceSerial():
             shell=True)
     serialNumber,stderr = ioreg.communicate()
 
-    return serialNumber.strip()
+    return serialNumber.strip().decode()
 
 
 # ------------------------------------------------------------------------------
@@ -63,6 +64,7 @@ if (manifest == 'null' or manifest == '' or not manifest):
 manifest = manifest.replace(" ", "%20")
 
 # send info
+print('Munki Manifest Integration')
 reporter = Reporter()
 reporter.add_metadata(
     identifier           = 'munki_manifest_link',

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>PluginName</key>
+    <string>Check MDM</string>
+    <key>PluginUUID</key>
+    <string>43959406-EFE6-4F01-9AC2-F629C7EB8314</string>
+    <key>PluginOptions</key>
+    <array>
+        <dict>
+            <key>SettingStorageKey</key>
+            <string>mdm_warning</string>
+            <key>SettingStoragePath</key>
+            <string>/Library/MonitoringClient/PluginSupport/_check_mdm_settings.plist</string>
+            <key>SettingTitle</key>
+            <string>Alerts if MDM isn't installed.</string>
+            <key>SettingTitleHint</key>
+            <string>None: Will only notify Watchman. Warn: Watchman will send an email once. Alert: Watchman will continue to send email alerts.</string>
+            <key>SettingType</key>
+            <dict>
+                <key>Type</key>
+                <string>PopUpMenu</string>
+                <key>Value</key>
+                <array>
+                    <string>None</string>
+                    <string>Warn</string>
+                    <string>Alert</string>
+                </array>
+            </dict>
+        </dict>
+        <dict>
+            <key>SettingStorageKey</key>
+            <string>uamdm_warning</string>
+            <key>SettingStoragePath</key> 			<string>/Library/MonitoringClient/PluginSupport/_check_mdm_settings.plist</string>
+            <key>SettingTitle</key>
+            <string>Alerts if MDM isn't approved (10.13.4+ only.)</string>
+            <key>SettingTitleHint</key>
+            <string>None: Will only notify Watchman. Warn: Watchman will send an email once. Alert: Watchman will continue to send email alerts.</string>
+            <key>SettingType</key>
+            <dict>
+                <key>Type</key>
+                <string>PopUpMenu</string>
+                <key>Value</key>
+                <array>
+                    <string>None</string>
+                    <string>Warn</string>
+                    <string>Alert</string>
+                </array>
+            </dict>
+        </dict>
+    </array>
+    <key>PluginVersion</key>
+    <string>1.1</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Library/MonitoringClient/Plugins/_check_mdm.plugin</string>
+    </array>
+</dict>
+</plist>
