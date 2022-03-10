@@ -81,4 +81,8 @@ Watchman Monitoring plugin that reports on the status of munki. It will trigger 
 #              - Remove Munki from public facing reports
 # 2020-06-22  v1.4
 #              - Dont alert on certain temp errors
+# 2021-01-13  v1.4.1
+#             - Alert if using site_default manifest
+# 2022-03-10  v1.4.2
+#             - Remove reliance on python
 ```

@@ -60,6 +60,10 @@ Watchman Monitoring plugin to report on the results of DetectX
 ## Changelog
 
 ```
+# 2022-03-07    v1.4.4
+#               - Update python shebang + python3
+# 2020-06-17    v1.4.3
+#               - Fix python datetime issue
 # 2020-06-17    v1.4.2
 #               - Ignore registration
 # 2020-06-10    v1.4.1
