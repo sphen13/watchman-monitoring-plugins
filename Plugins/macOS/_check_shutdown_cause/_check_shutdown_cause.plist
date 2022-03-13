@@ -5,7 +5,7 @@
 	<key>PluginName</key>
 	<string>Shutdown Cause</string>
 	<key>PluginVersion</key>
-	<string>0.6</string>
+	<string>0.7</string>
 	<key>PluginOptions</key>
 	<array>
 		<dict>
