@@ -37,4 +37,7 @@ Checks current time against **NTP reference server** time polled via `ntpdate` o
 #               exit with informational status on initial ntp reset attempt
 # 2019-12-10: v1.4.2
 #               ignore kod_db error - output more details on error
+# 2022-03-12: v1.5
+#               fix os version logic for bigsur+ (oops a litte late)
+#               address sntp output differences
 ```

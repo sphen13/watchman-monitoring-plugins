@@ -5,7 +5,7 @@
 	<key>PluginName</key>
 	<string>Time Drift</string>
 	<key>PluginVersion</key>
-	<string>1.4.3</string>
+	<string>1.5</string>
   <key>PluginUUID</key>
   <string>3AE09BDE-D2D7-4804-9B43-650DE08BA01E</string>
 	<key>PluginOptions</key>

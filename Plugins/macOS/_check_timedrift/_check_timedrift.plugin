@@ -2,8 +2,8 @@
 
 # PLUGIN: 	TimeDrift
 # AUTHOR: 	Stephen Boyle @sphen13
-# DATE:   	2020-03-23
-# VERSION:	1.4.3
+# DATE:   	2022-03-12
+# VERSION:	1.5
 
 # 2017-02-23: v1
 # 2017-12-19: v1.2
@@ -21,6 +21,15 @@
 #               ignore kod_db error - output more details on error
 # 2020-03-23: v1.4.3
 #               warn on check error
+# 2022-03-12: v1.5
+#               fix os version logic for bigsur+ (oops a litte late)
+#               address sntp output differences
+
+## sntp notes
+# 10.14/15 output example:
+# 2022-03-12 21:38:01.311915 (+0500) +3.621803 +/- 2.419840 us.pool.ntp.org 159.203.82.102 s3 no-leap
+# 11/12 output example:
+# +0.095166 +/- 0.111229 us.pool.ntp.org 204.93.207.12
 
 # set defaults
 pluginName="_check_timedrift"
@@ -30,7 +39,8 @@ secondsOfAcceptableDrift=120
 settings_plist="/Library/MonitoringClient/PluginSupport/"$pluginName"_settings.plist"
 clientSettings="/Library/MonitoringClient/ClientSettings.plist"
 PlistBuddy="/usr/libexec/PlistBuddy"
-osVersion=$(sw_vers -productVersion | cut -d. -f2)
+osVersionMajor=$(sw_vers -productVersion | cut -d. -f1)
+osVersionMinor=$(sw_vers -productVersion | cut -d. -f2)
 
 # read settings and create if needed. disable by default / unless we are a server...
 if [ ! -f $settings_plist ]; then
@@ -82,7 +92,7 @@ attemptRemediation=`defaults read "$settings_plist" attemptRemediation`
 weAreOnline=`ping -c 1 -W 900 8.8.8.8 > /dev/null && echo '1'`
 if [ ! -z "$weAreOnline" ]; then
 	# check for drift
-	if [ "$osVersion" -lt "14" ]; then
+	if [ "$osVersionMajor" -eq "10" ] && [ "$osVersionMinor" -lt "14" ]; then
 		output=`ntpdate -q "$ntpServer" 2>&1 | tail -1`
 	else
 		output=`sntp -t 10 "$ntpServer" | grep -v kod_db 2>/dev/null | tail -1`
@@ -100,10 +110,10 @@ if [ ! -z "$weAreOnline" ]; then
 		# should we do more checking here?  i have seen false errors of this? lets return notice but dont alert for now. i was thinking about handling this differently, hence the different if block.
 		exit 20
 	else
-		if [ "$osVersion" -lt "14" ]; then
+		if [ "$osVersionMajor" -eq "10" ] && [ "$osVersionMinor" -lt "14" ]; then
 			drift=`echo "$output" | sed -n -e 's/^.*offset [-]*\(.*\) .*$/\1/p'`
 		else
-			drift=`echo "$output" | sed -n -e 's/^.*) [+-]\(.*\) \+\/.*$/\1/p'`
+			drift=`echo "$output" | sed -n -e 's/^.*[+-]\(.*\) \+\/.*$/\1/p'`
 		fi
 		driftAcceptable=`echo "$secondsOfAcceptableDrift > $drift" | bc -l`
 
@@ -120,7 +130,7 @@ if [ ! -z "$weAreOnline" ]; then
 				else
 					# ok so we found an excessive time drift. lets reload the daemon - wait a bit and recheck...
 					echo -e "\nRESETTING ntp....\n"
-					if [ "$osVersion" -lt "14" ]; then
+					if [ "$osVersionMajor" -eq "10" ] && [ "$osVersionMinor" -lt "14" ]; then
 						ntpdate -u $(systemsetup -getnetworktimeserver|awk '{print $4}') >/dev/null 2>&1
 					else
 						sntp -S -t 10 $(systemsetup -getnetworktimeserver|awk '{print $4}') >/dev/null 2>&1
@@ -132,10 +142,10 @@ if [ ! -z "$weAreOnline" ]; then
 						launchctl load /System/Library/LaunchDaemons/org.ntp.ntpd.plist
 						sleep 5
 					fi
-					if [ "$osVersion" -lt "14" ]; then
+					if [ "$osVersionMajor" -eq "10" ] && [ "$osVersionMinor" -lt "14" ]; then
 						driftNew=`ntpdate -q "$ntpServer" 2>&1 | tail -1 | sed -n -e 's/^.*offset [-]*\(.*\) .*$/\1/p'`
 					else
-						driftNew=`sntp -t 10 "$ntpServer" 2>/dev/null | tail -1 | sed -n -e 's/^.*) [+-]\(.*\) \+\/.*$/\1/p'`
+						driftNew=`sntp -t 10 "$ntpServer" 2>/dev/null | tail -1 | sed -n -e 's/^.*[+-]\(.*\) \+\/.*$/\1/p'`
 					fi
 					echo -e "\nNew time drift: $driftNew"
 
