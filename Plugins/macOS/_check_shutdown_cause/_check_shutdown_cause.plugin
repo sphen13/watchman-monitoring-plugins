@@ -2,8 +2,8 @@
 
 # PLUGIN: 	Check Shutdown Cause
 # AUTHOR: 	Stephen Boyle @sphen13
-# DATE:   	2020-06-08
-# VERSION:	0.6
+# DATE:   	2022-03-13
+# VERSION:	0.7
 
 # 2017-02-26	v0.1-0.2
 # 2018-10-30	v0.3
@@ -17,6 +17,8 @@
 #               remove 1 as alert (seems to be normal T1/T2?)
 # 2020-06-08  v0.6
 #               remove 7 as alert (seems to be normal T2?)
+# 2022-03-13  v0.7
+#               fix os version logic for bigsur+ (oops a litte late)
 
 # read prefpane settings & set defaults
 settings_plist='/Library/MonitoringClient/PluginSupport/_check_shutdown_cause_settings.plist'
@@ -62,7 +64,8 @@ shutdownCauseOK=('5' '7')
 # set the shutdown causes we only want to warn on
 shutdownCauseWarn=('3' '2' '0' '1' '7' '-1' '-60' '-128')
 
-currentOS=`sw_vers -productVersion | cut -d'.' -f2`
+osVersionMajor=$(sw_vers -productVersion | cut -d. -f1)
+osVersionMinor=$(sw_vers -productVersion | cut -d. -f2)
 lastBoot=`sysctl kern.boottime | cut -d"}" -f2 | awk '{print $1,$2,$3,$4,$5}'`
 
 # declare function
@@ -119,7 +122,7 @@ if [ "$lastCheckSec" -lt "$lastBootSec" ]; then
 	defaults write "$settings_plist" lastCheck -date "$thisCheck +0000"
 	chmod 644 "$settings_plist"
 
-	if [ "$currentOS" -ge "12" ]; then
+	if [ "$osVersionMajor" -ge "11" ] || ([ "$osVersionMajor" -eq "10" ] && [ "$osVersionMinor" -ge "12" ]); then
 		# set the end date of our log scan to + 5 minutes
 		lastBootCheckEnd=`date -j -v +5M -f "%Y-%m-%d %H:%M:%S" "$lastBoot" "+%Y-%m-%d %H:%M:%S"`
 
