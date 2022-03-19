@@ -9,6 +9,8 @@
 #             - python & metadata
 # 2022-03-07  v2.0.1
 #             - update python shebang + python3
+# 2022-03-19  v2.0.2
+#             - Fix serial number and visibility
 
 import os
 import sys
@@ -28,7 +30,7 @@ def deviceSerial():
             shell=True)
     serialNumber,stderr = ioreg.communicate()
 
-    return serialNumber.strip()
+    return serialNumber.strip().decode()
 
 
 # ------------------------------------------------------------------------------
