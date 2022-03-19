@@ -6,8 +6,8 @@
 	<string>Munki Manifest</string>
 	<key>PluginVersion</key>
 	<string>1.0.2</string>
-  <key>PluginUUID</key>
-  <string>4c9d30bd-32eb-4189-bbc9-cad411e0b5f2</string>
+	<key>PluginUUID</key>
+	<string>4c9d30bd-32eb-4189-bbc9-cad411e0b5f2</string>
 	<key>PluginOptions</key>
 	<array>
 		<dict>
