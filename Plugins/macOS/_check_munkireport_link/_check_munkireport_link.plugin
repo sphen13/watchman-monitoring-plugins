@@ -2,13 +2,16 @@
 
 # PLUGIN: Check MunkiReport Link
 # AUTHOR: Stephen Boyle @sphen13
-# DATE:   2022-03-07
+# DATE:   2022-03-20
 
 # 2017-10-25  v1.0
 # 2019-09-10  v2.0
 #             - python & metadata
 # 2022-03-07  v2.0.1
 #             - update python shebang + python3
+# 2022-03-20  v2.0.2
+#             - fix python string
+#             - remove deprecated PluginVisible key
 
 import os
 import sys
@@ -28,7 +31,7 @@ def deviceSerial():
             shell=True)
     serialNumber,stderr = ioreg.communicate()
 
-    return serialNumber.strip()
+    return serialNumber.decode().strip()
 
 
 # ------------------------------------------------------------------------------

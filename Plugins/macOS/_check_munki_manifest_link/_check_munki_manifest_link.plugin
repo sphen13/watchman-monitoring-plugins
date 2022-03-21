@@ -2,12 +2,13 @@
 
 # PLUGIN: Check Munki Manifest Link
 # AUTHOR: Stephen Boyle @sphen13
-# DATE:   2022-03-07
+# DATE:   2022-03-20
 #
 # Requires Atom and https://github.com/WizardOfOgz/atom-handler
 
 # 2019-10-08  v1.0
 # 2022-03-07  v1.0.1
+# 2022-03-20  v1.0.2
 
 import os
 import sys

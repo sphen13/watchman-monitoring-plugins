@@ -2,8 +2,8 @@
 
 # PLUGIN:  Munki Status
 # AUTHOR:  Stephen Boyle @sphen13
-# DATE:    2022-03-10
-# VERSION: 1.4.2
+# DATE:    2022-03-15
+# VERSION: 1.5
 
 # 2018-09-19  v1.0
 # 2018-11-01  v1.1
@@ -20,6 +20,8 @@
 #             - Alert if using site_default manifest
 # 2022-03-10  v1.4.2
 #             - Remove reliance on python
+# 2022-03-15  v1.5
+#             - Update for new notificationAgent with a backup one as well
 
 # set defaults
 pluginName="_check_munki"
@@ -32,7 +34,8 @@ clientSettings="/Library/MonitoringClient/ClientSettings.plist"
 munkiPrefs="/Library/Preferences/ManagedInstalls.plist"
 munkiReport="/Library/Managed Installs/ManagedInstallReport.plist"
 PlistBuddy="/usr/libexec/PlistBuddy -c"
-notificationAgent="/Applications/Utilities/yo.app/Contents/MacOS/yo"
+notificationAgent="/Applications/Utilities/Third Vantage Alerts.app/Contents/MacOS/Third Vantage Alerts"
+notificationAgent2="/Applications/Utilities/yo.app/Contents/MacOS/yo"
 notificationTitle="Software Updates Available"
 notificationTitleCritical="Critical Updates Available"
 
@@ -104,6 +107,10 @@ thisCheck=`date "+%Y-%m-%d %H:%M:%S"`
 today=`date +%Y-%m-%d`
 if [[ "$lastUserNotification" == "$today" ]]; then
   userNotifiedToday=1
+fi
+# set to backup notificationAgent if primary doesnt exist
+if [ ! -e "$notificationAgent" ]; then
+  notificationAgent=$notificationAgent2
 fi
 
 # lets do some stuff
