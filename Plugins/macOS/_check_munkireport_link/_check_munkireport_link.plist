@@ -5,7 +5,7 @@
 	<key>PluginName</key>
 	<string>MunkiReport</string>
 	<key>PluginVersion</key>
-	<string>2.0.1</string>
+	<string>2.0.2</string>
   <key>PluginUUID</key>
   <string>50a3bbaa-00f0-486a-9aac-dadd0363342e</string>
 	<key>PluginOptions</key>
@@ -32,7 +32,5 @@
 	<array>
 		<string>_check_munkireport_link.plugin</string>
 	</array>
-  <key>PluginVisible</key>
-  <false/>
 </dict>
 </plist>
