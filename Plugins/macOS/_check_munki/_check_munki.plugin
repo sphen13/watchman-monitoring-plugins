@@ -2,8 +2,8 @@
 
 # PLUGIN:  Munki Status
 # AUTHOR:  Stephen Boyle @sphen13
-# DATE:    2022-03-15
-# VERSION: 1.5
+# DATE:    2022-05-18
+# VERSION: 1.5.1
 
 # 2018-09-19  v1.0
 # 2018-11-01  v1.1
@@ -22,6 +22,8 @@
 #             - Remove reliance on python
 # 2022-03-15  v1.5
 #             - Update for new notificationAgent with a backup one as well
+# 2022-05-18  v1.5.1
+#             - Suppress ManifestName missing error
 
 # set defaults
 pluginName="_check_munki"
@@ -156,7 +158,7 @@ if [ -e "$munkiPrefs" ] && [ -e "$munkiReport" ]; then
   #problemInstalls=`$PlistBuddy "Print :ProblemInstalls:" "${munkiReport}" 2>/dev/null | sed -e 1d -e '$d'`
 
   # check manifest
-  currentManifest=`defaults read /Library/Managed\ Installs/ManagedInstallReport.plist ManifestName`
+  currentManifest=`defaults read /Library/Managed\ Installs/ManagedInstallReport.plist ManifestName 2>/dev/null`
   if [[ "$currentManifest" == "site_default" ]]; then
     exitStatus=2
     printf "Munki is using the site_default manifest.\n"
