@@ -14,7 +14,7 @@
             <key>SettingStoragePath</key>
             <string>/Library/MonitoringClient/PluginSupport/_check_mdm_settings.plist</string>
             <key>SettingTitle</key>
-            <string>Alerts if MDM isn't installed.</string>
+			<string>Alerts if MDM isn&apos;t installed.</string>
             <key>SettingTitleHint</key>
             <string>None: Will only notify Watchman. Warn: Watchman will send an email once. Alert: Watchman will continue to send email alerts.</string>
             <key>SettingType</key>
@@ -34,7 +34,7 @@
             <string>uamdm_warning</string>
             <key>SettingStoragePath</key> 			<string>/Library/MonitoringClient/PluginSupport/_check_mdm_settings.plist</string>
             <key>SettingTitle</key>
-            <string>Alerts if MDM isn't approved (10.13.4+ only.)</string>
+			<string>Alerts if MDM isn&apos;t approved (10.13.4+ only.)</string>
             <key>SettingTitleHint</key>
             <string>None: Will only notify Watchman. Warn: Watchman will send an email once. Alert: Watchman will continue to send email alerts.</string>
             <key>SettingType</key>
