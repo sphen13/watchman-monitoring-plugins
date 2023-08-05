@@ -32,7 +32,8 @@
         <dict>
             <key>SettingStorageKey</key>
             <string>uamdm_warning</string>
-            <key>SettingStoragePath</key> 			<string>/Library/MonitoringClient/PluginSupport/_check_mdm_settings.plist</string>
+            <key>SettingStoragePath</key>
+            <string>/Library/MonitoringClient/PluginSupport/_check_mdm_settings.plist</string>
             <key>SettingTitle</key>
 			<string>Alerts if MDM isn&apos;t approved (10.13.4+ only.)</string>
             <key>SettingTitleHint</key>
