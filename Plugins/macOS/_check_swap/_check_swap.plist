@@ -6,8 +6,8 @@
 	<string>Swap Usage</string>
 	<key>PluginVersion</key>
 	<string>1.0</string>
-  <key>PluginUUID</key>
-  <string>37C0B784-D15C-4DB3-91B7-49C4CC3DD121</string>
+	<key>PluginUUID</key>
+	<string>37C0B784-D15C-4DB3-91B7-49C4CC3DD121</string>
 	<key>PluginOptions</key>
 	<array>
 		<dict>

@@ -35,7 +35,7 @@
         <key>SettingTitle</key>
         <string>Network Service to monitor</string>
         <key>SettingTitleHint</key>
-        <string>Provide the exact Network Service name you want to monitor as listed within System Preferences -> Network</string>
+            <string>Provide the exact Network Service name you want to monitor as listed within System Preferences -&gt; Network</string>
         <key>SettingType</key>
         <dict>
           <key>Type</key>
