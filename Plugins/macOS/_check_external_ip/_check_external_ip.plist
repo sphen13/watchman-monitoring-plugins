@@ -4,8 +4,10 @@
 <dict>
 	<key>PluginName</key>
 	<string>External IP</string>
+	<key>PluginUUID</key>
+	<string>d6485623-26ec-4e66-8f2d-055c4df04b19</string>
 	<key>PluginVersion</key>
-	<string>1.1</string>
+	<string>1.2</string>
 	<key>PluginOptions</key>
 	<array>
 		<dict>

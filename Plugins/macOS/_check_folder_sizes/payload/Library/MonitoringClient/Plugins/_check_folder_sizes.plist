@@ -4,8 +4,10 @@
 <dict>
 	<key>PluginName</key>
 	<string>Large Folders</string>
+	<key>PluginUUID</key>
+	<string>fc0071d2-0e75-44da-9e47-70d1447bfa19</string>
 	<key>PluginVersion</key>
-	<string>1.0</string>
+	<string>1.1</string>
 	<key>PluginOptions</key>
 	<array>
 		<dict>
