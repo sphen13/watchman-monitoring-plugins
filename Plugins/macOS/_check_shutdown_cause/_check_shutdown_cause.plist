@@ -4,8 +4,10 @@
 <dict>
 	<key>PluginName</key>
 	<string>Shutdown Cause</string>
+	<key>PluginUUID</key>
+	<string>0D7B23E0-C556-4E96-8130-DE351A0B57E9</string>
 	<key>PluginVersion</key>
-	<string>0.8</string>
+	<string>0.9</string>
 	<key>PluginOptions</key>
 	<array>
 		<dict>
