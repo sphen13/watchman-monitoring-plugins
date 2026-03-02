@@ -24,9 +24,9 @@ except ImportError:
 # VARIABLES
 # ------------------------------------------------------------------------------
 
-baseURL = 'tv-mosyleapi.azurewebsites.net'
-functionAppCode = 'cl2lpOGawXyR_Pdckx_aexiEqkl9PKYUWqNABT0MGmG6AzFuIGuk1w=='
-apiKey = '76239DE5-D658-4326-8AED-C967DA0E3BCC'
+baseURL = 'xxx.azurewebsites.net'
+functionAppCode = 'xxx'
+apiKey = 'xxx'
 
 # ------------------------------------------------------------------------------
 # FUNCTIONS
