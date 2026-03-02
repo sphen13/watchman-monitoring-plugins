@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+
+# PLUGIN: Check Mosyle Link
+# AUTHOR: Stephen Boyle @sphen13
+# DATE:   2026-03-02
+#
+# Requires mosyle azure function app https://github.com/sphen13/mosyleapi-flex
+
+# 2026-03-02  v1.0
+
+import sys
+import subprocess
+import json
+import ssl
+from PluginToolkit import *
+
+try:
+    from urllib.request import urlopen, Request
+    from urllib.error import URLError
+except ImportError:
+    from urllib2 import urlopen, Request, URLError
+
+# ------------------------------------------------------------------------------
+# VARIABLES
+# ------------------------------------------------------------------------------
+
+baseURL = 'tv-mosyleapi.azurewebsites.net'
+functionAppCode = 'cl2lpOGawXyR_Pdckx_aexiEqkl9PKYUWqNABT0MGmG6AzFuIGuk1w=='
+apiKey = '76239DE5-D658-4326-8AED-C967DA0E3BCC'
+
+# ------------------------------------------------------------------------------
+# FUNCTIONS
+# ------------------------------------------------------------------------------
+
+def deviceSerial():
+    # Get machine serial
+    ioreg = subprocess.Popen( "ioreg -c IOPlatformExpertDevice | awk -F '\"' '/IOPlatformSerialNumber/ {print $4}'",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            shell=True)
+    serialNumber,stderr = ioreg.communicate()
+
+    return serialNumber.strip().decode()
+
+
+# ------------------------------------------------------------------------------
+
+# read preferences
+settings_plist = '/Library/MonitoringClient/PluginSupport/_check_mosyle_link_settings.plist'
+base_settings = {
+    'Initially_Disabled' : False,
+    'PrefPaneVisibility' : True,
+}
+settings = check_settings(base_settings, settings_plist)
+writePlist(settings, settings_plist)
+
+# get device serial and query API
+serial = deviceSerial()
+url = 'https://{}/api/devices?code={}&api_key={}&serial_number={}'.format(
+    baseURL, functionAppCode, apiKey, serial
+)
+
+try:
+    ssl_context = ssl.create_default_context(cafile='/etc/ssl/cert.pem')
+    req = Request(url)
+    response = urlopen(req, timeout=30, context=ssl_context)
+    data = json.loads(response.read().decode('utf-8'))
+except Exception:
+    sys.exit(25)
+
+# check for direct device link
+try:
+    link = data['response'][0]['devices'][0]['open_direct_device_link']
+except (KeyError, IndexError, TypeError):
+    link = None
+
+if not link:
+    sys.exit(25)
+
+# send info
+print('Mosyle Integration')
+reporter = Reporter()
+reporter.add_metadata(
+    identifier           = 'mosyle_link',
+    name                 = 'Open in Mosyle',
+    datatype             = 'integration_link',
+    value                = link,
+    visible              = True
+)
+
+sys.exit(0)

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>PluginName</key>
+	<string>Mosyle Link</string>
+	<key>PluginVersion</key>
+	<string>1.0.0</string>
+	<key>PluginUUID</key>
+	<string>768C1EAD-FA25-4CE2-8A47-C525A7F7E3F2</string>
+	<key>PluginOptions</key>
+	<array>
+		<dict>
+			<key>SettingStorageKey</key>
+			<string>.</string>
+			<key>SettingStoragePath</key>
+			<string>/Library/MonitoringClient/PluginSupport/_check_mosyle_link_settings.plist</string>
+			<key>SettingTitle</key>
+			<string>Reports the direct Mosyle link</string>
+			<key>SettingTitleHint</key>
+			<string></string>
+			<key>SettingType</key>
+			<dict>
+				<key>Type</key>
+				<string>DisplayOnly</string>
+				<key>Value</key>
+				<string></string>
+			</dict>
+		</dict>
+	</array>
+	<key>ProgramArguments</key>
+	<array>
+		<string>_check_mosyle_link.plugin</string>
+	</array>
+</dict>
+</plist>
